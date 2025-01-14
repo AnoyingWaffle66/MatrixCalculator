@@ -2,14 +2,7 @@ import json
 
 # "database" file name
 file_name = "matrix.txt"
-empty_file_matrix = {
-    "default": {
-        "rows" : 1,
-        "values" : [
-            0.0
-        ]
-    }
-}
+empty_file_matrix = {}
 
 # matrix functions
 def multiply_matrix(options: list):
@@ -65,7 +58,26 @@ def execute(options: list):
 
 # Database functions
 def view_whole_file(options: list):
-    print("view whole file")
+    if len(options) > 0:
+        print("'ls' takes no arguments")
+        return
+    matrix_data = None
+    file = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+    except:
+        pass
+    finally:
+        file.close()
+        
+    for matrix_name in matrix_data:
+        print("\n")
+        print(matrix_name)
+        for matrix_sub in matrix_data[matrix_name]:
+            print(f"{matrix_sub} - {matrix_data[matrix_name][matrix_sub]}")
+    
+    print("\n")
 
 def add(options: list):
     if len(options) != 3:
@@ -146,7 +158,7 @@ commands = {
     "rm"     : remove,
     "search" : search,
     "update" : update,
-    "all"    : view_whole_file,
+    "ls"     : view_whole_file,
     "mat"    : execute
 }
 
@@ -158,7 +170,7 @@ commands_help = {
     "rm"     : "remove a matrix from the file",
     "search" : "search for a matrix name in the file",
     "update" : "update an existing matrix",
-    "all"    : "view all matrices in the file",
+    "als"    : "view all matrices in the file",
     "mat"    : "access the matrix calculator"
 }
 # End database functions
@@ -171,14 +183,8 @@ def start():
         file = open(file_name)
     except:
         file = open(file_name, 'w')
-        default_matrix = {
-            "default" : {
-                "rows" : 1,
-                "values" : [
-                    0.0
-                ]
-            }
-        }
+        global empty_file_matrix
+        default_matrix = empty_file_matrix
         matrix_string = json.dumps(default_matrix)
         file.write(matrix_string)
     file.close()
