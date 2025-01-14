@@ -85,7 +85,7 @@ def add(options: list):
         return
     
     rows = 1
-    float_values = [0.0]
+    float_values = []
     try:
         rows = int(options[1])
         string_values = options[2].split(',')
@@ -139,10 +139,60 @@ def remove(options: list):
         print("something went wrong")
 
 def search(options: list):
-    print("search")
+    if len(options) != 1:
+        print("Provide the name of the matrix you are searching for")
+        return
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+        if matrix_data.get(options[0], None):
+            print(f"\n{options[0]}")
+            for matrix_sub in matrix_data[options[0]]:
+                print(f"{matrix_sub} - {matrix_data[options[0]][matrix_sub]}")
+        else:
+            print("matrix not found in file")
+    except:
+        print("Couldn't open file")
 
 def update(options: list):
-    print("update")
+    if len(options) != 3:
+        print("provide all necessary parameters")
+        return
+    file = None
+    matrix_data = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+        if not matrix_data.get(options[0], None):
+            print("no matrix with that name")
+            return        
+        try:
+            rows = 1
+            float_values = []
+            rows = int(options[1])
+            string_values = options[2].split(',')
+            if (len(string_values) % rows != 0):
+                print("Values needs to be multiple of row_count")
+                return
+            for values in string_values:
+                float_values.append(float(values)) 
+            matrix_data[options[0]] = {
+                "rows" : rows,
+                "values" : float_values
+            }
+        except:
+            print("numbers required")
+        file.close()
+    except:
+        print("couldnt open file1")
+    finally:
+        file.close()
+    try:
+        with open(file_name, 'w') as file:
+            json.dump(matrix_data, file, indent=4)
+    except:
+        file.close()
+        print("couldn't open file2")
 
 def help(options: list):
     print("-" * 55)
@@ -170,7 +220,7 @@ commands_help = {
     "rm"     : "remove a matrix from the file",
     "search" : "search for a matrix name in the file",
     "update" : "update an existing matrix",
-    "als"    : "view all matrices in the file",
+    "ls"    : "view all matrices in the file",
     "mat"    : "access the matrix calculator"
 }
 # End database functions
