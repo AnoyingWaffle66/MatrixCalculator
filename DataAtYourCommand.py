@@ -2,6 +2,14 @@ import json
 
 # "database" file name
 file_name = "matrix.txt"
+empty_file_matrix = {
+    "default": {
+        "rows" : 1,
+        "values" : [
+            0.0
+        ]
+    }
+}
 
 # matrix functions
 def multiply_matrix(options: list):
@@ -63,41 +71,60 @@ def add(options: list):
     if len(options) != 3:
         print("Not enough arguments, provide - name row_count values\nExample, add matrix1 2 1,2,3,4")
         return
+    
+    rows = 1
+    float_values = [0.0]
     try:
-        rows = float(options[1])
+        rows = int(options[1])
         string_values = options[2].split(',')
         if (len(string_values) % rows != 0):
             print("Values needs to be multiple of row_count")
-        float_values = []
+            return
         for values in string_values:
-            float_values.append(float(values))
-        print("appended values")
-        with open(file_name, "r") as file:
-            print("starting file read")
-            thing = file.read()
-            print("file read")
-            data = json.load(thing)
-            print("file read finished")
-        print("load worked")
-        new_matrix = {
-            "name"   : options[0],
-            "rows"   : rows,
-            "values" : float_values
-            }
-        
-        new_matrix = json.dumps(new_matrix)
-        new_matrix += ","
-        data += new_matrix
-        
-        with open(file_name, 'w') as file:
-            json.dumps(data, file, indent=4)
-            print("data dumped")
+            float_values.append(float(values))        
     except:
         print("row_count and values need to be numbers")
+    
+    file = None
+    matrix_data = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+        matrix_data[options[0]] = {
+            "rows" : rows,
+            "values" : float_values
+        }
         file.close()
+    except:
+        print(f"Couldn't open file: {file_name}")
+    
+    global empty_file_matrix
+    try:
+        with open(file_name, 'w') as file:
+            json.dump(matrix_data, file, indent=4)
+    except json.JSONDecodeError:
+        print("Couldn't dump matrix into file. Dumping default in.")
+        file.close()
+        with open(file_name, 'w') as file:
+            file.write(json.dumps(empty_file_matrix))        
 
 def remove(options: list):
-    print("remove")
+    if len(options) != 1:
+        print("Provide one name of matrix to remove")
+        return
+    try:
+        file = open(file_name, 'r+')
+        matrix_data = json.load(file)
+        if matrix_data.pop(options[0], None):
+            print(f"Matrix {options[0]} was removed")
+        else:
+            print("No matrix exists with that name")
+        file.close()
+        file = open(file_name, 'w')
+        file.write(json.dumps(matrix_data))
+        file.close()
+    except:
+        print("something went wrong")
 
 def search(options: list):
     print("search")
@@ -142,10 +169,19 @@ def start():
     file = None
     try:
         file = open(file_name)
-        file.close()
     except:
         file = open(file_name, 'w')
-        file.close()
+        default_matrix = {
+            "default" : {
+                "rows" : 1,
+                "values" : [
+                    0.0
+                ]
+            }
+        }
+        matrix_string = json.dumps(default_matrix)
+        file.write(matrix_string)
+    file.close()
     while True:
         user_input = input("main> ").lower()
         
