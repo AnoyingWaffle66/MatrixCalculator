@@ -5,6 +5,13 @@ file_name = "matrix.txt"
 empty_file_matrix = {}
 
 # matrix functions
+def print_matrix(matrix: dict, matrix_name: str):
+    print("")
+    print(f"name   - {matrix_name}")
+    for matrix_sub in matrix:
+            print(f"{matrix_sub} " + " " * (6 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
+    print("")
+
 def multiply_matrix(options: list):
     print("Multiply matrix")
 
@@ -15,7 +22,31 @@ def subtract_matrix(options: list):
     print("subtract matrix")
 
 def scale_matrix(options: list):
-    print("scale matrix")
+    if len(options) != 2:
+        print("Provide a matrix name and a scalar value")
+        return
+    file = None
+    matrix_data = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+        file.close()
+    except:
+        print("couldn't open file")
+    matrix_name = options[0]
+    matrix_obj = matrix_data.get(matrix_name, None)
+    if not matrix_obj:
+        print(f"couldn't find matrix {matrix_name}")
+        return
+    scale = 0
+    try:
+        scale = float(options[1])
+    except:
+        print("couldn't convert option 2 to a float")
+        return
+    for value_idx in range(0, len(matrix_obj["values"])):
+        matrix_obj["values"][value_idx] *= scale
+    print_matrix(matrix_obj, matrix_name)
 
 def transpose_matrix(options: list):
     print("transpose matrix")
@@ -26,16 +57,55 @@ def find_determinate(options: list):
 def back_failsafe(options: list=None):
     return True
 
+def mat_help(options: list=None):
+    print("-" * 55)
+    for command in ex_commands:
+        print(f"\n{command} " + " " * (6 - len(command)) + f"- {ex_commands_help[command]}")
+    print("\n" + "-" * 55)
+
+def view_whole_file(options: list):
+    if len(options) > 0:
+        print("'ls' takes no arguments")
+        return
+    matrix_data = None
+    file = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+    except:
+        pass
+    finally:
+        file.close()
+        
+    for matrix_name in matrix_data:
+        print_matrix(matrix_data[matrix_name], matrix_name)
+    
 ex_commands = {
     "x"     : exit,
     "exit"  : exit,
     "back"  : back_failsafe,
+    "help"  : mat_help,
+    "ls"    : view_whole_file,
     "mult"  : multiply_matrix,
     "add"   : add_matrix,
     "sub"   : subtract_matrix,
     "scale" : scale_matrix,
     "deter" : find_determinate,
     "trans" : transpose_matrix
+}
+
+ex_commands_help = {
+    "x"     : "exits the application",
+    "exit"  : "exits the application",
+    "back"  : "go back one menu",
+    "help"  : "displays this list of command descriptions",
+    "ls"    : "view all matrices in the file",
+    "mult"  : "multiply two matrices together",
+    "add"   : "add two matrices together",
+    "sub"   : "subtract two matrices together",
+    "scale" : "scale matrix by coefficient",
+    "deter" : "find determinate of matrix",
+    "trans" : "transpose matrix"
 }
 
 # End matrix functions
@@ -57,28 +127,6 @@ def execute(options: list):
             return
 
 # Database functions
-def view_whole_file(options: list):
-    if len(options) > 0:
-        print("'ls' takes no arguments")
-        return
-    matrix_data = None
-    file = None
-    try:
-        file = open(file_name, 'r')
-        matrix_data = json.load(file)
-    except:
-        pass
-    finally:
-        file.close()
-        
-    for matrix_name in matrix_data:
-        print("\n")
-        print(matrix_name)
-        for matrix_sub in matrix_data[matrix_name]:
-            print(f"{matrix_sub} - {matrix_data[matrix_name][matrix_sub]}")
-    
-    print("\n")
-
 def add(options: list):
     if len(options) != 3:
         print("Not enough arguments, provide - name row_count values\nExample, add matrix1 2 1,2,3,4")
@@ -220,7 +268,7 @@ commands_help = {
     "rm"     : "remove a matrix from the file",
     "search" : "search for a matrix name in the file",
     "update" : "update an existing matrix",
-    "ls"    : "view all matrices in the file",
+    "ls"     : "view all matrices in the file",
     "mat"    : "access the matrix calculator"
 }
 # End database functions
