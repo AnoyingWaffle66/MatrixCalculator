@@ -4,22 +4,96 @@ import json
 file_name = "matrix.txt"
 empty_file_matrix = {}
 
+# file stuff
+def add_to_file(matrix: dict, matrix_name: str) -> bool:
+    # TODO open file and add new matrix to it
+    pass
+
+def get_matrices_from_file() -> dict:
+    # TODO open file, load matrices, close file
+    pass
+
+def view_whole_file(options: list):
+    if len(options) > 0:
+        print("'ls' takes no arguments")
+        return
+    matrix_data = None
+    file = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+    except:
+        pass
+    finally:
+        file.close()
+        
+    for matrix_name in matrix_data:
+        print_matrix(matrix_data[matrix_name], matrix_name)
+# end file stuff
+
 # matrix functions
 def print_matrix(matrix: dict, matrix_name: str):
     print("")
-    print(f"name   - {matrix_name}")
+    print(f"name    - {matrix_name}")
     for matrix_sub in matrix:
-            print(f"{matrix_sub} " + " " * (6 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
+            print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
     print("")
 
 def multiply_matrix(options: list):
-    print("Multiply matrix")
+    pass
 
-def add_matrix(options: list):
-    print("add matrix")
+def add_matrix(options: list, scale: int=1):
+    if len(options) != 2:
+        print("provide the name of two matrices")
+    file = None
+    matrix_data = None
+    try:
+        file = open(file_name, 'r')
+        matrix_data = json.load(file)
+        file.close()
+    except:
+        pass
+    matrix_name_1 = options[0]
+    matrix_name_2 = options[1]
+    matrix_obj_1 = matrix_data.get(matrix_name_1, None)
+    matrix_obj_2 = matrix_data.get(matrix_name_2, None)
+    found_both = True
+    if not matrix_obj_1:
+        print(f"couldn't find matrix {matrix_name_1}")
+        found_both = False
+    if not matrix_obj_2:
+        print(f"couldn't find matrix {matrix_name_2}")
+        found_both = False
+        
+    if not found_both:
+        return
+    
+    matrix_1_rows = matrix_obj_1["rows"]
+    matrix_2_rows = matrix_obj_2["rows"]
+    matrix_1_values = matrix_obj_1["values"]
+    matrix_2_values = matrix_obj_2["values"]
+    if matrix_1_rows != matrix_2_rows or len(matrix_1_values) != len(matrix_2_values):
+        print(f"{matrix_name_1} and {matrix_name_2} have incompatible dimensions")
+        return
+    join_string = None
+    if scale == 1:
+        join_string = "_+_"
+    else:
+        join_string = "_-_"
+    new_matrix_name = matrix_name_1 + join_string + matrix_name_2
+    new_matrix = {
+        new_matrix_name : {
+            "rows"   : matrix_1_rows,
+            "values" : []
+        }
+    }
+    
+    for matrix_idx in range(0, len(matrix_1_values)):
+        new_matrix[new_matrix_name]["values"].append(matrix_1_values[matrix_idx] + scale * matrix_2_values[matrix_idx])
+    print_matrix(new_matrix[new_matrix_name], new_matrix_name)
 
 def subtract_matrix(options: list):
-    print("subtract matrix")
+    add_matrix(options, -1)
 
 def scale_matrix(options: list):
     if len(options) != 2:
@@ -49,10 +123,10 @@ def scale_matrix(options: list):
     print_matrix(matrix_obj, matrix_name)
 
 def transpose_matrix(options: list):
-    print("transpose matrix")
+    pass
 
 def find_determinate(options: list):
-    print("find matrix")
+    pass
 
 def back_failsafe(options: list=None):
     return True
@@ -60,26 +134,9 @@ def back_failsafe(options: list=None):
 def mat_help(options: list=None):
     print("-" * 55)
     for command in ex_commands:
-        print(f"\n{command} " + " " * (6 - len(command)) + f"- {ex_commands_help[command]}")
+        print(f"\n{command} " + " " * (7 - len(command)) + f"- {ex_commands_help[command]}")
     print("\n" + "-" * 55)
 
-def view_whole_file(options: list):
-    if len(options) > 0:
-        print("'ls' takes no arguments")
-        return
-    matrix_data = None
-    file = None
-    try:
-        file = open(file_name, 'r')
-        matrix_data = json.load(file)
-    except:
-        pass
-    finally:
-        file.close()
-        
-    for matrix_name in matrix_data:
-        print_matrix(matrix_data[matrix_name], matrix_name)
-    
 ex_commands = {
     "x"     : exit,
     "exit"  : exit,
@@ -107,13 +164,11 @@ ex_commands_help = {
     "deter" : "find determinate of matrix",
     "trans" : "transpose matrix"
 }
-
 # End matrix functions
 
 def execute(options: list):
-    print("execute")
     while True:
-        user_input = input("matrixinator>").lower()
+        user_input = input("matrixinator> ").lower()
         
         user_input = user_input.split(" ")
         
@@ -152,6 +207,7 @@ def add(options: list):
         matrix_data = json.load(file)
         matrix_data[options[0]] = {
             "rows" : rows,
+            "columns" : int(len(float_values)/rows),
             "values" : float_values
         }
         file.close()
@@ -166,7 +222,8 @@ def add(options: list):
         print("Couldn't dump matrix into file. Dumping default in.")
         file.close()
         with open(file_name, 'w') as file:
-            file.write(json.dumps(empty_file_matrix))        
+            file.write(json.dumps(empty_file_matrix)) 
+        file.close()       
 
 def remove(options: list):
     if len(options) != 1:
@@ -245,7 +302,7 @@ def update(options: list):
 def help(options: list):
     print("-" * 55)
     for command in commands:
-        print(f"\n{command} " + " " * (6 - len(command)) + f"- {commands_help[command]}")
+        print(f"\n{command} " + " " * (7 - len(command)) + f"- {commands_help[command]}")
     print("\n" + "-" * 55)
 
 commands = {
