@@ -1,8 +1,15 @@
 import json
 
 # "database" file name
-file_name = "matrix.txt"
-empty_file_matrix = {}
+file_name = "matrix.json"
+empty_file_matrix = {
+    "default" : {
+        "rows" : 0,
+        "columns" : 0,
+        "Values" : []
+    }
+}
+
 
 # file stuff
 def add_to_file(matrix: dict, matrix_name: str):
@@ -102,19 +109,26 @@ def multiply_matrix(options: list):
                 second_new_values.append(mat1["values"][first] * mat2["values"][mat2["columns"] + second])
     for add_idx in range(0, len(first_new_values)):
         first_new_values[add_idx] += second_new_values[add_idx]
-    new_mat = {
+    new_mat_name = f"{options[0]}*{options[1]}"
+    new_mat =  {   
         "rows"    : mat1["rows"],
         "columns" : mat2["columns"],
         "values"  : first_new_values
     }
     if add_mat_to_file:
-        add_to_file(new_mat, f"{options[0]}_*_{options[1]}")
+        add_to_file(new_mat, new_mat_name)
         print("matrix added to file")
-    print(first_new_values)
+    print_matrix(new_mat, new_mat_name)
 
 def add_matrix(options: list, scale: int=1):
-    if len(options) != 2:
+    if len(options) < 2:
         print("provide the name of two matrices")
+        return
+    write = False
+    if len(options) == 3:
+        if options[2] != "w":
+            print("use w option to write to file")
+        write = True
     scale = 1 if scale > -1 else scale
     scale = -1 if scale < -1 else scale
     matrix_data = get_matrices_from_file()
@@ -144,24 +158,32 @@ def add_matrix(options: list, scale: int=1):
     if scale == -1:
         join_string = "-"
     new_matrix_name = matrix_name_1 + join_string + matrix_name_2
-    new_matrix = {
-        new_matrix_name : {
-            "rows"   : matrix_1_rows,
-            "values" : []
-        }
-    }
+    values = []
     
     for matrix_idx in range(0, len(matrix_1_values)):
-        new_matrix[new_matrix_name]["values"].append(matrix_1_values[matrix_idx] + scale * matrix_2_values[matrix_idx])
-    print_matrix(new_matrix[new_matrix_name], new_matrix_name)
+        values.append(matrix_1_values[matrix_idx] + scale * matrix_2_values[matrix_idx])
+    
+    new_matrix = {
+        "rows"   : matrix_1_rows,
+        "columns" : int(len(values)/matrix_1_rows),
+        "values" : values
+    }
+    if write:
+        add_to_file(new_matrix, new_matrix_name)
+    print_matrix(new_matrix, new_matrix_name)
 
 def subtract_matrix(options: list):
     add_matrix(options, -1)
 
 def scale_matrix(options: list):
-    if len(options) != 2:
+    if len(options) < 2:
         print("Provide a matrix name and a scalar value")
         return
+    write = False
+    if len(options) == 3:
+        if options[2] != "w":
+            print("use w option to write to file")
+        write = True
 
     matrix_data = get_matrices_from_file()
     if not matrix_data:
@@ -179,7 +201,10 @@ def scale_matrix(options: list):
         return
     for value_idx in range(0, len(matrix_obj["values"])):
         matrix_obj["values"][value_idx] *= scale
-    print_matrix(matrix_obj, matrix_name)
+    new_matrix_name = matrix_name + "s"
+    if write:
+        add_to_file(matrix_obj, new_matrix_name)
+    print_matrix(matrix_obj, new_matrix_name)
 
 def transpose_matrix(options: list):
     if len(options) < 1:
@@ -211,7 +236,7 @@ def transpose_matrix(options: list):
     print_matrix(write_mat, trans_mat_name)
 
 def find_determinate(options: list):
-    if len(options) != 1:
+    if len(options) < 1:
         print("Provide the name of the matrix to find the determinate of")
         return
     matrix_objs = get_matrices_from_file()
@@ -287,12 +312,18 @@ def execute(options: list):
     while True:
         user_input = input("matrixinator> ").lower()
         user_input = user_input.split(" ")
-        if user_input[0] not in ex_commands:
+        user_command = user_input[0]
+        
+        if "default" in user_input:
+            print("Can't use the default matrix")
+            continue
+        
+        if user_command not in ex_commands:
             print("not a matrix operation")
-        elif(user_input[0] == "exit" or user_input[0] == "x"):
-            ex_commands[user_input[0]]()
+        elif(user_command == "exit" or user_command == "x"):
+            ex_commands[user_command]()
         else:
-            thing = ex_commands[user_input[0]](user_input[1:])
+            thing = ex_commands[user_command](user_input[1:])
         if thing:
             return
 
@@ -399,10 +430,15 @@ def start():
         user_input = input("main> ").lower()
         
         user_input = user_input.split(" ")
+        user_command = user_input[0]
         
-        if user_input[0] not in commands:
+        if "default" in user_input:
+            print("Can't use the default matrix")
+            continue
+        
+        if user_command not in commands:
             print("Not a command use 'help' to see a list of all commands")
-        elif (user_input[0] == "exit" or user_input[0] == "x"):
+        elif (user_command == "exit" or user_command == "x"):
             exit()
         else:
             commands[user_input[0]](user_input[1:])
