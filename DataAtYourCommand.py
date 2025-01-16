@@ -6,7 +6,6 @@ empty_file_matrix = {}
 
 # file stuff
 def add_to_file(matrix: dict, matrix_name: str):
-    # TODO open file and add new matrix to it
     matrix_objs = get_matrices_from_file()
     if not matrix_objs:
         print("OH NO IS BROKEN")
@@ -49,7 +48,7 @@ def view_whole_file(options: list):
 # matrix functions
 def print_matrix(matrix: dict, matrix_name: str):
     print("")
-    print(f"name    - '{matrix_name}'")
+    print(f"name    - {matrix_name}")
     for matrix_sub in matrix:
             print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
     print("")
@@ -192,11 +191,9 @@ def transpose_matrix(options: list):
             write = True
     matrix_objs = get_matrices_from_file()
     if not matrix_objs:
-        print("waaaaa")
         return
     mat_to_transpose = matrix_objs.get(options[0], None)
     if not mat_to_transpose:
-        print("aaaaaaaaa")
         return
     new_list = []
     for column in range(0, mat_to_transpose["columns"]):
@@ -214,7 +211,39 @@ def transpose_matrix(options: list):
     print_matrix(write_mat, trans_mat_name)
 
 def find_determinate(options: list):
-    pass
+    if len(options) != 1:
+        print("Provide the name of the matrix to find the determinate of")
+        return
+    matrix_objs = get_matrices_from_file()
+    if not matrix_objs:
+        print("Couldn't get matrices")
+        return
+    matrix_to_det = matrix_objs.get(options[0], None)
+    if not matrix_to_det:
+        print("couldnt matrix")
+        return
+    mat_rows = matrix_to_det["rows"]
+    mat_cols = matrix_to_det["columns"]
+    if mat_rows != mat_cols:
+        print("Cant find determinate of non perfect square matrices")
+        return
+    print(determinate_calculation(matrix_to_det["values"], mat_rows))
+    
+
+def determinate_calculation(matrix: list, side: int):
+    if(side == 1):
+        return matrix[0]
+    value = 0
+    
+    for column in range(0, side):
+        matrix_to_det = []
+        for row in range(1, side):
+            for extra in range(0, side):
+                determin_append = row * side + extra
+                if determin_append != row * side + column:
+                    matrix_to_det.append(matrix[determin_append])
+        value += pow(-1, column) * matrix[column] * determinate_calculation(matrix_to_det, side - 1)
+    return value
 
 def back_failsafe(options: list=None):
     return True
