@@ -318,19 +318,21 @@ def execute(options: list):
             print("Can't use the default matrix")
             continue
         
+        back = False
+        
         if user_command not in ex_commands:
             print("not a matrix operation")
         elif(user_command == "exit" or user_command == "x"):
             ex_commands[user_command]()
         else:
-            thing = ex_commands[user_command](user_input[1:])
-        if thing:
+            back = ex_commands[user_command](user_input[1:])
+        if back:
             return
 
 # Database functions
 def add(options: list):
     if len(options) != 3:
-        print("Not enough arguments, provide - name row_count values\nExample, add matrix1 2 1,2,3,4")
+        print("Provide name row_count and values\nExample, add matrix1 2 1,2,3,4")
         return
     matrix_parsed = parse_matrix(options[1:])
     if not matrix_parsed:
@@ -340,7 +342,7 @@ def add(options: list):
 
 def remove(options: list):
     if len(options) != 1:
-        print("Provide one name of matrix to remove")
+        print("Provide the name of matrix to remove\nExample, rm matrix1")
         return
     matrix_data = get_matrices_from_file()
     if not matrix_data:
@@ -354,7 +356,7 @@ def remove(options: list):
 
 def search(options: list):
     if len(options) != 1:
-        print("Provide the name of the matrix you are searching for")
+        print("Provide the name of the matrix you are searching for\nExample, search matrix1")
         return
     matrix_data = get_matrices_from_file()
     if not matrix_data:
@@ -367,7 +369,7 @@ def search(options: list):
 
 def update(options: list):
     if len(options) != 3:
-        print("provide all necessary parameters")
+        print("provide name row_count and values\nExample, update matrix1 2 1,2")
         return
     matrix_name = options[0]
     matrix_data = get_matrices_from_file()
