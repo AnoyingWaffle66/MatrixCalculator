@@ -57,8 +57,21 @@ def print_matrix(matrix: dict, matrix_name: str):
     print("")
     print(f"name    - {matrix_name}")
     for matrix_sub in matrix:
+        if matrix_sub != "values":
             print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
+        else:
+            prettify_matrix(matrix[matrix_sub], matrix["rows"])
     print("")
+
+def prettify_matrix(matrix: list, rows: int):
+    columns = int(len(matrix)/rows)
+    print()
+    for row in range(0, rows):
+        row_to_print = []
+        for column in range(0, columns):
+            row_to_print.append(matrix[row*columns+column])
+        print(row_to_print)
+    print()
 
 def parse_matrix(properties: list):
     try:
@@ -107,6 +120,10 @@ def multiply_matrix(options: list):
                 first_new_values.append(mat1["values"][first] * mat2["values"][second])
             else:
                 second_new_values.append(mat1["values"][first] * mat2["values"][mat2["columns"] + second])
+        # print(first_new_values)
+        # print(second_new_values)
+    print(len(first_new_values))
+    print(len(second_new_values))
     for add_idx in range(0, len(first_new_values)):
         first_new_values[add_idx] += second_new_values[add_idx]
     new_mat_name = f"{options[0]}*{options[1]}"
@@ -220,11 +237,7 @@ def transpose_matrix(options: list):
     mat_to_transpose = matrix_objs.get(options[0], None)
     if not mat_to_transpose:
         return
-    new_list = []
-    for column in range(0, mat_to_transpose["columns"]):
-        for row in range(0, mat_to_transpose["rows"]):
-            new_list.append(mat_to_transpose["values"][column + row*mat_to_transpose["columns"]])
-            pass
+    new_list = transpose(mat_to_transpose["values"], mat_to_transpose["columns"], mat_to_transpose["rows"])
     write_mat = {
     "rows"    : mat_to_transpose["columns"],
     "columns" : mat_to_transpose["rows"],
@@ -234,6 +247,13 @@ def transpose_matrix(options: list):
     if write:
         add_to_file(write_mat, trans_mat_name)
     print_matrix(write_mat, trans_mat_name)
+
+def transpose(matrix: list, columns: int, rows: int) -> list:
+    new_list = []
+    for column in range(0, columns):
+        for row in range(0, rows):
+            new_list.append(matrix[column + row * columns])
+    return new_list
 
 def find_determinate(options: list):
     if len(options) < 1:
@@ -270,6 +290,48 @@ def determinate_calculation(matrix: list, side: int):
         value += pow(-1, column) * matrix[column] * determinate_calculation(matrix_to_det, side - 1)
     return value
 
+def find_inverse(options: list):
+    if len(options) < 1:
+        print("Provide the name of the matrix to find the inverse of")
+        return
+    matrix_objs = get_matrices_from_file()
+    if not matrix_objs:
+        print("couldn't matrix")
+        return
+    matrix_to_inv = matrix_objs.get(options[0], None)
+    if not matrix_to_inv:
+        print("couldn't matrix")
+        return
+    mat_rows = matrix_to_inv["rows"]
+    mat_columns = matrix_to_inv["columns"]
+    if mat_rows != mat_columns:
+        print("Can't find the inverse of non perfect square matrices")
+        return
+    
+    inverse_calculation(matrix_to_inv["values"], matrix_to_inv["rows"])
+
+def inverse_calculation(matrix: list, side: int):
+    mat_to_return = []
+    for matrix_pos in range(0, len(matrix)):
+        mat_to_return.append(0)
+        mat_to_det = []
+        exponent_list = []
+        for a in range(0, side):
+            for b in range(0, side):
+                idx = a * side + b
+                idx_mod = idx % side
+                idx_div = int(idx / side)
+                if idx_mod != matrix_pos % side and idx_div != int(matrix_pos / side):
+                    mat_to_det.append(matrix[idx])
+                exponent_list.append(a+b)
+        cofactor = pow(-1, exponent_list[matrix_pos]) * determinate_calculation(mat_to_det, side - 1)
+        mat_to_return[matrix_pos] = cofactor
+    prettify_matrix(mat_to_return, side)
+    mat_to_return = transpose(mat_to_return, side, side)
+    dividend = determinate_calculation(matrix, side)
+    print(f"Dividend - {dividend}")
+    prettify_matrix(mat_to_return, side)
+
 def back_failsafe(options: list=None):
     return True
 
@@ -290,7 +352,8 @@ ex_commands = {
     "sub"   : subtract_matrix,
     "scale" : scale_matrix,
     "deter" : find_determinate,
-    "trans" : transpose_matrix
+    "trans" : transpose_matrix,
+    "inv"   : find_inverse
 }
 
 ex_commands_help = {
@@ -304,7 +367,8 @@ ex_commands_help = {
     "sub"   : "subtract two matrices together",
     "scale" : "scale matrix by coefficient",
     "deter" : "find determinate of matrix",
-    "trans" : "transpose matrix"
+    "trans" : "transpose matrix",
+    "inv"   : "find inverse of matrix"
 }
 # End matrix functions
 
@@ -339,6 +403,8 @@ def add(options: list):
         return
     matrix_add = matrix_parsed
     add_to_file(matrix_add, options[0])
+    print(f"\nMatrix {options[0]} was added")
+    print_matrix(matrix_parsed, options[0])
 
 def remove(options: list):
     if len(options) != 1:
@@ -383,6 +449,8 @@ def update(options: list):
         return
     matrix_data[matrix_name] = matrix_parsed
     overwrite_file(matrix_data)
+    print(f"\nMatrix {matrix_name} was updated")
+    print_matrix(matrix_parsed, matrix_name)
 
 def help(options: list):
     print("-" * 55)
