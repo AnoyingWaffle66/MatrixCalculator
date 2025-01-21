@@ -60,18 +60,23 @@ def print_matrix(matrix: dict, matrix_name: str):
         if matrix_sub != "values":
             print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
         else:
+            print("values")
             prettify_matrix(matrix[matrix_sub], matrix["rows"])
     print("")
 
 def prettify_matrix(matrix: list, rows: int):
     columns = int(len(matrix)/rows)
-    print()
     for row in range(0, rows):
         row_to_print = []
         for column in range(0, columns):
             row_to_print.append(matrix[row*columns+column])
-        print(row_to_print)
-    print()
+        string_no_comma = "["
+        for number in range(0, len(row_to_print)):
+            number_str = "%.2f" % row_to_print[number]
+            string_no_comma += f"{' ' * (7 - len(number_str))}  {number_str}"
+            if number == len(row_to_print) - 1:
+                string_no_comma += "  ]"
+        print(string_no_comma)
 
 def parse_matrix(properties: list):
     try:
@@ -103,34 +108,38 @@ def multiply_matrix(options: list):
             return
         add_mat_to_file = True
     matrix_objs = get_matrices_from_file()
-    mat1 = matrix_objs.get(options[0], None)
+    mat1_name = options[0]
+    mat2_name = options[1]
+    mat1 = matrix_objs.get(mat1_name, None)
     if not mat1:
         return
-    mat2 = matrix_objs.get(options[1], None)
+    mat2 = matrix_objs.get(mat2_name, None)
     if not mat2:
         return 
     if mat1["columns"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
-    first_new_values  = []
-    second_new_values = []
-    for first in range(0, len(mat1["values"])):
-        for second in range(0, mat2["columns"]):
-            if(first % 2) == 0:
-                first_new_values.append(mat1["values"][first] * mat2["values"][second])
-            else:
-                second_new_values.append(mat1["values"][first] * mat2["values"][mat2["columns"] + second])
-        # print(first_new_values)
-        # print(second_new_values)
-    print(len(first_new_values))
-    print(len(second_new_values))
-    for add_idx in range(0, len(first_new_values)):
-        first_new_values[add_idx] += second_new_values[add_idx]
-    new_mat_name = f"{options[0]}*{options[1]}"
+    matrix_array  = []
+    mat1_rows = mat1["rows"]
+    mat2_columns = mat2["columns"]
+    mat1_columns = mat1["columns"]
+    for matrix_count in range(0, mat1_columns):
+        temp_matrix = []
+        for values in range(0, mat1_rows * mat2_columns):
+            temp_matrix.append(0)
+        for b in range(0, mat1_rows):
+            for c in range(0, mat2_columns):
+                temp_matrix[b*mat2_columns + c] = mat1["values"][b*mat1_columns + matrix_count] * mat2["values"][matrix_count*mat2_columns + c]
+        matrix_array.append(temp_matrix)
+    for thing2 in range(0, len(matrix_array) - 1):
+        for thing in range(0, len(matrix_array[0])):
+            matrix_array[0][thing] += matrix_array[thing2 + 1][thing]
+    print(matrix_array[0])
+    new_mat_name = f"{mat1_name}*{mat2_name}"
     new_mat =  {   
-        "rows"    : mat1["rows"],
-        "columns" : mat2["columns"],
-        "values"  : first_new_values
+        "rows"    : mat1_rows,
+        "columns" : mat2_columns,
+        "values"  : matrix_array[0]
     }
     if add_mat_to_file:
         add_to_file(new_mat, new_mat_name)
@@ -311,6 +320,10 @@ def find_inverse(options: list):
     inverse_calculation(matrix_to_inv["values"], matrix_to_inv["rows"])
 
 def inverse_calculation(matrix: list, side: int):
+    determinate = determinate_calculation(matrix, side)
+    if determinate == 0:
+        print("Determinate is 0 -> The matrix is singular")
+        return
     mat_to_return = []
     for matrix_pos in range(0, len(matrix)):
         mat_to_return.append(0)
@@ -326,10 +339,16 @@ def inverse_calculation(matrix: list, side: int):
                 exponent_list.append(a+b)
         cofactor = pow(-1, exponent_list[matrix_pos]) * determinate_calculation(mat_to_det, side - 1)
         mat_to_return[matrix_pos] = cofactor
+    print("\nCofactor matrix")
     prettify_matrix(mat_to_return, side)
     mat_to_return = transpose(mat_to_return, side, side)
-    dividend = determinate_calculation(matrix, side)
-    print(f"Dividend - {dividend}")
+    print("\nTranspose matrix")
+    prettify_matrix(mat_to_return, side)
+    print(f"\ndeterminate - {determinate}\n")
+    print(f"\nInverse matrix -> matrix/{determinate}")
+    inverse_determinate = 1/determinate
+    for number in range(0, len(mat_to_return)):
+        mat_to_return[number] *= inverse_determinate
     prettify_matrix(mat_to_return, side)
 
 def back_failsafe(options: list=None):
@@ -341,9 +360,12 @@ def mat_help(options: list=None):
         print(f"\n{command} " + " " * (7 - len(command)) + f"- {ex_commands_help[command]}")
     print("\n" + "-" * 55)
 
+def my_exit(options: list=None):
+    exit()
+
 ex_commands = {
-    "x"     : exit,
-    "exit"  : exit,
+    "x"     : my_exit,
+    "exit"  : my_exit,
     "back"  : back_failsafe,
     "help"  : mat_help,
     "ls"    : view_whole_file,
@@ -386,10 +408,8 @@ def execute(options: list):
         
         if user_command not in ex_commands:
             print("not a matrix operation")
-        elif(user_command == "exit" or user_command == "x"):
-            ex_commands[user_command]()
-        else:
-            back = ex_commands[user_command](user_input[1:])
+            return
+        back = ex_commands[user_command](user_input[1:])
         if back:
             return
 
@@ -459,8 +479,8 @@ def help(options: list):
     print("\n" + "-" * 55)
 
 commands = {
-    "x"      : exit,
-    "exit"   : exit,
+    "x"      : my_exit,
+    "exit"   : my_exit,
     "help"   : help,
     "add"    : add,
     "rm"     : remove,
@@ -508,9 +528,7 @@ def start():
         
         if user_command not in commands:
             print("Not a command use 'help' to see a list of all commands")
-        elif (user_command == "exit" or user_command == "x"):
-            exit()
-        else:
-            commands[user_input[0]](user_input[1:])
+            continue
+        commands[user_input[0]](user_input[1:])
 
 start()
