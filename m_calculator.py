@@ -96,6 +96,9 @@ def parse_matrix(properties: list):
         "columns" : int(len(float_values)/rows),
         "values"  : float_values
     }
+    
+def get_matrix_index(mult: int, const: int, add: int) -> int:
+    return mult * const + add
 
 def multiply_matrix(options: list):
     if len(options) < 2:
@@ -119,32 +122,36 @@ def multiply_matrix(options: list):
     if mat1["columns"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
-    matrix_array  = []
-    mat1_rows = mat1["rows"]
-    mat2_columns = mat2["columns"]
-    mat1_columns = mat1["columns"]
-    for matrix_count in range(0, mat1_columns):
-        temp_matrix = []
-        for values in range(0, mat1_rows * mat2_columns):
-            temp_matrix.append(0)
-        for b in range(0, mat1_rows):
-            for c in range(0, mat2_columns):
-                temp_matrix[b*mat2_columns + c] = mat1["values"][b*mat1_columns + matrix_count] * mat2["values"][matrix_count*mat2_columns + c]
-        matrix_array.append(temp_matrix)
-    for thing2 in range(0, len(matrix_array) - 1):
-        for thing in range(0, len(matrix_array[0])):
-            matrix_array[0][thing] += matrix_array[thing2 + 1][thing]
-    print(matrix_array[0])
+    new_mat = multiply(mat1, mat2)
+    # print(matrix_array[0])
     new_mat_name = f"{mat1_name}*{mat2_name}"
-    new_mat =  {   
-        "rows"    : mat1_rows,
-        "columns" : mat2_columns,
-        "values"  : matrix_array[0]
-    }
     if add_mat_to_file:
         add_to_file(new_mat, new_mat_name)
         print("matrix added to file")
     print_matrix(new_mat, new_mat_name)
+    
+def multiply(matrix1: dict, matrix2: dict) -> dict:
+    matrix_array  = []
+    mat1_rows = matrix1["rows"]
+    mat2_columns = matrix2["columns"]
+    mat1_columns = matrix1["columns"]
+    for matrix_count in range(0, mat1_columns):
+        temp_matrix = []
+        for values in range(0, mat1_rows * mat2_columns):
+            temp_matrix.append(values)
+        for b in range(0, mat1_rows):
+            for c in range(0, mat2_columns):
+                temp_matrix[get_matrix_index(b, mat2_columns, c)] = matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)]
+        matrix_array.append(temp_matrix)
+    for thing2 in range(0, len(matrix_array) - 1):
+        for thing in range(0, len(matrix_array[0])):
+            matrix_array[0][thing] += matrix_array[thing2 + 1][thing]
+    return {   
+        "rows"    : mat1_rows,
+        "columns" : mat2_columns,
+        "values"  : matrix_array[0]
+    }
+    
 
 def add_matrix(options: list, scale: int=1):
     if len(options) < 2:
@@ -261,7 +268,7 @@ def transpose(matrix: list, columns: int, rows: int) -> list:
     new_list = []
     for column in range(0, columns):
         for row in range(0, rows):
-            new_list.append(matrix[column + row * columns])
+            new_list.append(matrix[get_matrix_index(row, columns, column)])
     return new_list
 
 def find_determinate(options: list):
@@ -293,8 +300,8 @@ def determinate_calculation(matrix: list, side: int):
         matrix_to_det = []
         for row in range(1, side):
             for extra in range(0, side):
-                determin_append = row * side + extra
-                if determin_append != row * side + column:
+                determin_append = get_matrix_index(row, side, extra)
+                if determin_append != get_matrix_index(row, side, column):
                     matrix_to_det.append(matrix[determin_append])
         value += pow(-1, column) * matrix[column] * determinate_calculation(matrix_to_det, side - 1)
     return value
@@ -331,7 +338,7 @@ def inverse_calculation(matrix: list, side: int):
         exponent_list = []
         for a in range(0, side):
             for b in range(0, side):
-                idx = a * side + b
+                idx = get_matrix_index(a, side, b)
                 idx_mod = idx % side
                 idx_div = int(idx / side)
                 if idx_mod != matrix_pos % side and idx_div != int(matrix_pos / side):
