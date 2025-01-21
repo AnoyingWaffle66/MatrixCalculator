@@ -1,4 +1,5 @@
 import json
+import calc_rewrite as calc
 
 # "database" file name
 file_name = "matrix.json"
@@ -137,11 +138,12 @@ def multiply(matrix1: dict, matrix2: dict) -> dict:
     mat1_columns = matrix1["columns"]
     for matrix_count in range(0, mat1_columns):
         temp_matrix = []
-        for values in range(0, mat1_rows * mat2_columns):
-            temp_matrix.append(values)
+        # for value in range(mat1_rows * mat2_columns):
+        #     temp_matrix.append(value)
         for b in range(0, mat1_rows):
             for c in range(0, mat2_columns):
-                temp_matrix[get_matrix_index(b, mat2_columns, c)] = matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)]
+                temp_matrix.append(matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)])
+                # temp_matrix[get_matrix_index(b, mat2_columns, c)] = matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)]
         matrix_array.append(temp_matrix)
     for thing2 in range(0, len(matrix_array) - 1):
         for thing in range(0, len(matrix_array[0])):
