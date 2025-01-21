@@ -1,5 +1,5 @@
 import json
-import calc_rewrite as calc
+import matrix_funtions as mc
 
 # "database" file name
 file_name = "matrix.json"
@@ -97,9 +97,6 @@ def parse_matrix(properties: list) -> dict:
         "columns" : int(len(float_values)/rows),
         "values"  : float_values
     }
-    
-def get_matrix_index(mult: int, const: int, add: int) -> int:
-    return mult * const + add
 
 def multiply_matrix(options: list):
     if len(options) < 2:
@@ -123,37 +120,20 @@ def multiply_matrix(options: list):
     if mat1["columns"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
-    new_mat = multiply(mat1, mat2)
-    # print(matrix_array[0])
+    
+    new_mat = {
+        "rows"    : mat1["rows"],
+        "columns" : mat2["columns"],
+        "values"  : []
+    }
+    
+    new_mat["values"] = mc.multiply(mat1["values"], mat2["values"], mat1["columns"], mat1["rows"], mat2["columns"])
     new_mat_name = f"{mat1_name}*{mat2_name}"
     if add_mat_to_file:
         add_to_file(new_mat, new_mat_name)
         print("matrix added to file")
     print_matrix(new_mat, new_mat_name)
-    
-def multiply(matrix1: dict, matrix2: dict) -> dict:
-    matrix_array  = []
-    mat1_rows = matrix1["rows"]
-    mat2_columns = matrix2["columns"]
-    mat1_columns = matrix1["columns"]
-    for matrix_count in range(0, mat1_columns):
-        temp_matrix = []
-        # for value in range(mat1_rows * mat2_columns):
-        #     temp_matrix.append(value)
-        for b in range(0, mat1_rows):
-            for c in range(0, mat2_columns):
-                temp_matrix.append(matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)])
-                # temp_matrix[get_matrix_index(b, mat2_columns, c)] = matrix1["values"][get_matrix_index(b, mat1_columns, matrix_count)] * matrix2["values"][get_matrix_index(matrix_count, mat2_columns, c)]
-        matrix_array.append(temp_matrix)
-    for thing2 in range(0, len(matrix_array) - 1):
-        for thing in range(0, len(matrix_array[0])):
-            matrix_array[0][thing] += matrix_array[thing2 + 1][thing]
-    return {   
-        "rows"    : mat1_rows,
-        "columns" : mat2_columns,
-        "values"  : matrix_array[0]
-    }
-    
+
 def inv_solve(options: list):
     if len(options) < 2:
         print("please provide name of matrix and solution matrix")

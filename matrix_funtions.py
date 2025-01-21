@@ -69,5 +69,7 @@ def inverse(mat: list, side: int):
     mat_to_return = scale(mat_to_return, inverse_determinate)
     pass
 
-def solve(mat1: dict, mat2: dict):
+def solve(mat1: list, mat2: list, inner: int, left: int, right: int=1) -> list:
+    inverse_mat = inverse(mat1, left)
+    mat2 = multiply(inverse_mat, mat2, inner, left, right)
     pass
