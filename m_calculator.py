@@ -78,7 +78,7 @@ def prettify_matrix(matrix: list, rows: int):
                 string_no_comma += "  ]"
         print(string_no_comma)
 
-def parse_matrix(properties: list):
+def parse_matrix(properties: list) -> dict:
     try:
         rows = int(properties[0])
         string_values = properties[1].split(',')
@@ -152,6 +152,29 @@ def multiply(matrix1: dict, matrix2: dict) -> dict:
         "values"  : matrix_array[0]
     }
     
+def inv_solve(options: list):
+    if len(options) < 2:
+        print("please provide name of matrix and solution matrix")
+        return
+    matrix_data = get_matrices_from_file()
+    mat1 = matrix_data.get(options[0], None)
+    if not mat1:
+        print("couldn't find that matrix in file")
+        return
+    side = mat1["columns"]
+    mat_unparsed = [
+        f"{side}",
+        options[1]
+    ]
+    mat2 = parse_matrix(mat_unparsed)
+    if not mat2:
+        return
+    if side != mat2["rows"]:
+        return
+    inverse = inverse_calculation(mat1["values"], side)
+    mat2 = multiply(inverse, mat2)
+    print("\n\nAnswer -> inverse matrix * solution matrix")
+    prettify_matrix(mat2["values"], side)
 
 def add_matrix(options: list, scale: int=1):
     if len(options) < 2:
@@ -351,12 +374,18 @@ def inverse_calculation(matrix: list, side: int):
     mat_to_return = transpose(mat_to_return, side, side)
     print("\nTranspose matrix")
     prettify_matrix(mat_to_return, side)
-    print(f"\ndeterminate - {determinate}\n")
+    print(f"\ndeterminate - {determinate}")
     print(f"\nInverse matrix -> matrix/{determinate}")
     inverse_determinate = 1/determinate
     for number in range(0, len(mat_to_return)):
         mat_to_return[number] *= inverse_determinate
     prettify_matrix(mat_to_return, side)
+    mat_to_return = {
+        "rows" : side,
+        "columns" : side,
+        "values" : mat_to_return
+    }
+    return mat_to_return
 
 def back_failsafe(options: list=None):
     return True
@@ -382,7 +411,8 @@ ex_commands = {
     "scale" : scale_matrix,
     "deter" : find_determinate,
     "trans" : transpose_matrix,
-    "inv"   : find_inverse
+    "inv"   : find_inverse,
+    "solve" : inv_solve
 }
 
 ex_commands_help = {
@@ -397,7 +427,8 @@ ex_commands_help = {
     "scale" : "scale matrix by coefficient",
     "deter" : "find determinate of matrix",
     "trans" : "transpose matrix",
-    "inv"   : "find inverse of matrix"
+    "inv"   : "find inverse of matrix",
+    "solve" : "solve a system equations using inverse matrix"
 }
 # End matrix functions
 
