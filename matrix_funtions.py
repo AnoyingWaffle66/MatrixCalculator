@@ -1,3 +1,5 @@
+import prettify_matrix as pm
+
 def MCA(mult: int, const: int, add: int) -> int:
     return mult * const + add
 
@@ -26,8 +28,9 @@ def scale(mat: list, scale: float) -> list:
     values = []
     for mat_idx in range(len(mat)):
         values.append(mat[mat_idx] * scale)
+    return values
 
-def determinate(mat: list, side: int) -> float:
+def deter(mat: list, side: int) -> float:
     if(side == 1):
         return mat[0]
     value = 0
@@ -38,7 +41,7 @@ def determinate(mat: list, side: int) -> float:
                 determin_append = MCA(row, side, extra)
                 if determin_append != MCA(row, side, column):
                     matrix_to_det.append(mat[determin_append])
-        value += pow(-1, column) * mat[column] * determinate(matrix_to_det, side - 1)
+        value += pow(-1, column) * mat[column] * deter(matrix_to_det, side - 1)
     return value
 
 def transpose(mat: list, left: int, right: int) -> list:
@@ -48,7 +51,8 @@ def transpose(mat: list, left: int, right: int) -> list:
             list_to_return.append(mat[MCA(row, right, column)])
     return list_to_return
 
-def inverse(mat: list, side: int):
+def inverse(mat: list, side: int) -> list:
+    determinate = deter(mat, side)
     mat_to_return = []
     for matrix_pos in range(0, len(mat)):
         mat_to_return.append(0)
@@ -62,14 +66,22 @@ def inverse(mat: list, side: int):
                 if idx_mod != matrix_pos % side and idx_div != int(matrix_pos / side):
                     mat_to_det.append(mat[idx])
                 exponent_list.append(a+b)
-        cofactor = pow(-1, exponent_list[matrix_pos]) * MCA(mat_to_det, side - 1)
+        cofactor = pow(-1, exponent_list[matrix_pos]) * deter(mat_to_det, side - 1)
         mat_to_return[matrix_pos] = cofactor
+    print("\nCofactor matrix")
+    pm.prettify_matrix(mat_to_return, side)
     mat_to_return = transpose(mat_to_return, side, side)
+    print("\nTranspose matrix")
+    pm.prettify_matrix(mat_to_return, side)
     inverse_determinate = 1/determinate
+    print(f"\nDeterminate - {determinate}")
+    print(f"\nInverse matrix -> matrix/{determinate}")
     mat_to_return = scale(mat_to_return, inverse_determinate)
-    pass
+    pm.prettify_matrix(mat_to_return, side)
+    return mat_to_return
 
-def solve(mat1: list, mat2: list, inner: int, left: int, right: int=1) -> list:
-    inverse_mat = inverse(mat1, left)
-    mat2 = multiply(inverse_mat, mat2, inner, left, right)
-    pass
+def solve(mat1: list, mat2: list, dimension: int) -> list:
+    inverse_mat = inverse(mat1, dimension)
+    print("\nSolution -> inverse matrix * solution matrix")
+    pm.prettify_matrix(inverse_mat, dimension)
+    return multiply(inverse_mat, mat2, dimension, dimension, 1)

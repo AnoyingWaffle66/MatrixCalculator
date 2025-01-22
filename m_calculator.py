@@ -1,5 +1,6 @@
 import json
 import matrix_funtions as mc
+import prettify_matrix as pm
 
 # "database" file name
 file_name = "matrix.json"
@@ -62,22 +63,8 @@ def print_matrix(matrix: dict, matrix_name: str):
             print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
         else:
             print("values")
-            prettify_matrix(matrix[matrix_sub], matrix["rows"])
+            pm.prettify_matrix(matrix[matrix_sub], matrix["rows"])
     print("")
-
-def prettify_matrix(matrix: list, rows: int):
-    columns = int(len(matrix)/rows)
-    for row in range(0, rows):
-        row_to_print = []
-        for column in range(0, columns):
-            row_to_print.append(matrix[row*columns+column])
-        string_no_comma = "["
-        for number in range(0, len(row_to_print)):
-            number_str = "%.2f" % row_to_print[number]
-            string_no_comma += f"{' ' * (7 - len(number_str))}  {number_str}"
-            if number == len(row_to_print) - 1:
-                string_no_comma += "  ]"
-        print(string_no_comma)
 
 def parse_matrix(properties: list) -> dict:
     try:
@@ -120,14 +107,11 @@ def multiply_matrix(options: list):
     if mat1["columns"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
-    
     new_mat = {
         "rows"    : mat1["rows"],
         "columns" : mat2["columns"],
-        "values"  : []
+        "values"  : mc.multiply(mat1["values"], mat2["values"], mat1["columns"], mat1["rows"], mat2["columns"])
     }
-    
-    new_mat["values"] = mc.multiply(mat1["values"], mat2["values"], mat1["columns"], mat1["rows"], mat2["columns"])
     new_mat_name = f"{mat1_name}*{mat2_name}"
     if add_mat_to_file:
         add_to_file(new_mat, new_mat_name)
@@ -153,10 +137,13 @@ def inv_solve(options: list):
         return
     if side != mat2["rows"]:
         return
-    inverse = inverse_calculation(mat1["values"], side)
-    mat2 = multiply(inverse, mat2)
+    is_singular = mc.deter(mat1["values"], side)
+    if is_singular == 0:
+        print("Determinate is 0, matrix has no inverse")
+        return
+    solution = mc.solve(mat1["values"], mat2["values"], side)
     print("\n\nAnswer -> inverse matrix * solution matrix")
-    prettify_matrix(mat2["values"], side)
+    pm.prettify_matrix(solution, side)
 
 def add_matrix(options: list, scale: int=1):
     if len(options) < 2:
@@ -169,49 +156,62 @@ def add_matrix(options: list, scale: int=1):
         write = True
     scale = 1 if scale > -1 else scale
     scale = -1 if scale < -1 else scale
-    matrix_data = get_matrices_from_file()
-    matrix_name_1 = options[0]
-    matrix_name_2 = options[1]
-    matrix_obj_1 = matrix_data.get(matrix_name_1, None)
-    matrix_obj_2 = matrix_data.get(matrix_name_2, None)
+    mat_data = get_matrices_from_file()
+    if not mat_data:
+        print("couldn't get matrices from file")
+        return
+    mat1_name = options[0]
+    mat2_name = options[1]
+    mat1 = mat_data.get(mat1_name, None)
+    mat2 = mat_data.get(mat2_name, None)
     found_both = True
-    if not matrix_obj_1:
-        print(f"couldn't find matrix {matrix_name_1}")
+    if not mat1:
+        print(f"couldn't find matrix {mat1_name}")
         found_both = False
-    if not matrix_obj_2:
-        print(f"couldn't find matrix {matrix_name_2}")
+    if not mat2:
+        print(f"couldn't find matrix {mat2_name}")
         found_both = False
         
     if not found_both:
         return
+    mat1_rows = mat1["rows"]
+    mat2_rows = mat2["rows"]
+    mat1_values = mat1["values"]
+    mat2_values = mat2["values"]
     
-    matrix_1_rows = matrix_obj_1["rows"]
-    matrix_2_rows = matrix_obj_2["rows"]
-    matrix_1_values = matrix_obj_1["values"]
-    matrix_2_values = matrix_obj_2["values"]
-    if matrix_1_rows != matrix_2_rows or len(matrix_1_values) != len(matrix_2_values):
-        print(f"{matrix_name_1} and {matrix_name_2} have incompatible dimensions")
+    if mat1_rows != mat2_rows or len(mat1_values) != len(mat2_values):
+        print(f"{mat1_name} and {mat2_name} have incompatible dimensions")
         return
     join_string = "+"
     if scale == -1:
         join_string = "-"
-    new_matrix_name = matrix_name_1 + join_string + matrix_name_2
-    values = []
-    
-    for matrix_idx in range(0, len(matrix_1_values)):
-        values.append(matrix_1_values[matrix_idx] + scale * matrix_2_values[matrix_idx])
-    
+    new_matrix_name = mat1_name + join_string + mat2_name
     new_matrix = {
-        "rows"   : matrix_1_rows,
-        "columns" : int(len(values)/matrix_1_rows),
-        "values" : values
+        "rows"   : mat1_rows,
+        "columns" : int(len(mat1_values)/mat1_rows),
+        "values" : mc.add(mat1_values, mat2_values)
     }
     if write:
         add_to_file(new_matrix, new_matrix_name)
     print_matrix(new_matrix, new_matrix_name)
 
 def subtract_matrix(options: list):
-    add_matrix(options, -1)
+    if len(options) < 2:
+        print("more options")
+        return
+    mats = get_matrices_from_file()
+    if not mats:
+        print("no matrices")
+        return
+    mat1 = mats.get(options[0], None)
+    mat2 = mats.get(options[1], None)
+    if not mat1 or not mat2:
+        print("matrices not found")
+        return
+    if mat1["rows"] != mat2["rows"]:
+        print("matrices have incompatible dimensions")
+        return
+    pm.prettify_matrix(mc.subtract(mat1["values"], mat2["values"]), mat1["rows"])
 
 def scale_matrix(options: list):
     if len(options) < 2:
@@ -226,20 +226,18 @@ def scale_matrix(options: list):
     matrix_data = get_matrices_from_file()
     if not matrix_data:
         return
-    matrix_name = options[0]
-    matrix_obj = matrix_data.get(matrix_name, None)
+    mat_name = options[0]
+    matrix_obj = matrix_data.get(mat_name, None)
     if not matrix_obj:
-        print(f"couldn't find matrix {matrix_name}")
+        print(f"couldn't find matrix {mat_name}")
         return
-    scale = 0
     try:
         scale = float(options[1])
     except:
         print("couldn't convert option 2 to a float")
         return
-    for value_idx in range(0, len(matrix_obj["values"])):
-        matrix_obj["values"][value_idx] *= scale
-    new_matrix_name = matrix_name + "s"
+    matrix_obj["values"] = mc.scale(matrix_obj["values"], scale)
+    new_matrix_name = mat_name + "s"
     if write:
         add_to_file(matrix_obj, new_matrix_name)
     print_matrix(matrix_obj, new_matrix_name)
@@ -258,7 +256,7 @@ def transpose_matrix(options: list):
     mat_to_transpose = matrix_objs.get(options[0], None)
     if not mat_to_transpose:
         return
-    new_list = transpose(mat_to_transpose["values"], mat_to_transpose["columns"], mat_to_transpose["rows"])
+    new_list = mc.transpose(mat_to_transpose["values"], mat_to_transpose["columns"], mat_to_transpose["rows"])
     write_mat = {
     "rows"    : mat_to_transpose["columns"],
     "columns" : mat_to_transpose["rows"],
@@ -268,13 +266,6 @@ def transpose_matrix(options: list):
     if write:
         add_to_file(write_mat, trans_mat_name)
     print_matrix(write_mat, trans_mat_name)
-
-def transpose(matrix: list, columns: int, rows: int) -> list:
-    new_list = []
-    for column in range(0, columns):
-        for row in range(0, rows):
-            new_list.append(matrix[get_matrix_index(row, columns, column)])
-    return new_list
 
 def find_determinate(options: list):
     if len(options) < 1:
@@ -293,23 +284,8 @@ def find_determinate(options: list):
     if mat_rows != mat_cols:
         print("Cant find determinate of non perfect square matrices")
         return
-    print(determinate_calculation(matrix_to_det["values"], mat_rows))
+    print(mc.deter(matrix_to_det["values"], mat_rows))
     
-
-def determinate_calculation(matrix: list, side: int):
-    if(side == 1):
-        return matrix[0]
-    value = 0
-    
-    for column in range(0, side):
-        matrix_to_det = []
-        for row in range(1, side):
-            for extra in range(0, side):
-                determin_append = get_matrix_index(row, side, extra)
-                if determin_append != get_matrix_index(row, side, column):
-                    matrix_to_det.append(matrix[determin_append])
-        value += pow(-1, column) * matrix[column] * determinate_calculation(matrix_to_det, side - 1)
-    return value
 
 def find_inverse(options: list):
     if len(options) < 1:
@@ -328,46 +304,8 @@ def find_inverse(options: list):
     if mat_rows != mat_columns:
         print("Can't find the inverse of non perfect square matrices")
         return
-    
-    inverse_calculation(matrix_to_inv["values"], matrix_to_inv["rows"])
-
-def inverse_calculation(matrix: list, side: int):
-    determinate = determinate_calculation(matrix, side)
-    if determinate == 0:
-        print("Determinate is 0 -> The matrix is singular")
-        return
-    mat_to_return = []
-    for matrix_pos in range(0, len(matrix)):
-        mat_to_return.append(0)
-        mat_to_det = []
-        exponent_list = []
-        for a in range(0, side):
-            for b in range(0, side):
-                idx = get_matrix_index(a, side, b)
-                idx_mod = idx % side
-                idx_div = int(idx / side)
-                if idx_mod != matrix_pos % side and idx_div != int(matrix_pos / side):
-                    mat_to_det.append(matrix[idx])
-                exponent_list.append(a+b)
-        cofactor = pow(-1, exponent_list[matrix_pos]) * determinate_calculation(mat_to_det, side - 1)
-        mat_to_return[matrix_pos] = cofactor
-    print("\nCofactor matrix")
-    prettify_matrix(mat_to_return, side)
-    mat_to_return = transpose(mat_to_return, side, side)
-    print("\nTranspose matrix")
-    prettify_matrix(mat_to_return, side)
-    print(f"\ndeterminate - {determinate}")
-    print(f"\nInverse matrix -> matrix/{determinate}")
-    inverse_determinate = 1/determinate
-    for number in range(0, len(mat_to_return)):
-        mat_to_return[number] *= inverse_determinate
-    prettify_matrix(mat_to_return, side)
-    mat_to_return = {
-        "rows" : side,
-        "columns" : side,
-        "values" : mat_to_return
-    }
-    return mat_to_return
+    mc.inverse(matrix_to_inv["values"], mat_rows)
+    # pm.prettify_matrix(mc.inverse(matrix_to_inv["values"], mat_rows), mat_rows)
 
 def back_failsafe(options: list=None):
     return True
