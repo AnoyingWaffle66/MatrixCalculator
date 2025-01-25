@@ -15,7 +15,7 @@ empty_file_matrix = {
 
 # file stuff
 def add_to_file(matrix: dict, matrix_name: str):
-    matrix_objs = get_matrices_from_file()
+    matrix_objs = get_matrices_dict()
     if not matrix_objs:
         print("OH NO IS BROKEN")
         return
@@ -35,7 +35,7 @@ def overwrite_file(matrices: dict):
     finally:
         file.close()
 
-def get_matrices_from_file() -> dict:
+def get_matrices_dict() -> dict:
     try:
         file = open(file_name, 'r')
         matrix_objs = json.load(file)
@@ -49,9 +49,22 @@ def view_whole_file(options: list):
     if len(options) > 0:
         print("'ls' takes no arguments")
         return
-    matrix_data = get_matrices_from_file()    
+    matrix_data = get_matrices_dict()    
     for matrix_name in matrix_data:
         print_matrix(matrix_data[matrix_name], matrix_name)
+
+def get_matrices_list(matrices: list) -> list:
+    return_list = []
+    matrix_objs = get_matrices_dict()
+    if not matrix_objs:
+        return None
+    for matrix in matrices:
+        mat_to_add = matrix_objs.get(matrix, None)
+        if not mat_to_add:
+            print("Couldn't find matrix")
+            return None
+        return_list.append(mat_to_add)
+    return return_list
 # end file stuff
 
 # matrix functions
@@ -95,15 +108,13 @@ def multiply_matrix(options: list):
             print("use the 'w' option to add matrix to the file after calculation")
             return
         add_mat_to_file = True
-    matrix_objs = get_matrices_from_file()
+    matrix_objs = get_matrices_list(options[0:2])
+    if not matrix_objs:
+        return
     mat1_name = options[0]
     mat2_name = options[1]
-    mat1 = matrix_objs.get(mat1_name, None)
-    if not mat1:
-        return
-    mat2 = matrix_objs.get(mat2_name, None)
-    if not mat2:
-        return 
+    mat1 = matrix_objs[0]
+    mat2 = matrix_objs[1]
     if mat1["columns"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
@@ -122,11 +133,10 @@ def inv_solve(options: list):
     if len(options) < 2:
         print("please provide name of matrix and solution matrix")
         return
-    matrix_data = get_matrices_from_file()
-    mat1 = matrix_data.get(options[0], None)
-    if not mat1:
-        print("couldn't find that matrix in file")
+    matrix_data = get_matrices_list([options[0]])
+    if not matrix_data:
         return
+    mat1 = matrix_data[0]
     side = mat1["columns"]
     mat_unparsed = [
         f"{side}",
@@ -156,24 +166,13 @@ def add_matrix(options: list, scale: int=1):
         write = True
     scale = 1 if scale > -1 else scale
     scale = -1 if scale < -1 else scale
-    mat_data = get_matrices_from_file()
+    mat_data = get_matrices_list(options[0:])
     if not mat_data:
-        print("couldn't get matrices from file")
         return
     mat1_name = options[0]
     mat2_name = options[1]
-    mat1 = mat_data.get(mat1_name, None)
-    mat2 = mat_data.get(mat2_name, None)
-    found_both = True
-    if not mat1:
-        print(f"couldn't find matrix {mat1_name}")
-        found_both = False
-    if not mat2:
-        print(f"couldn't find matrix {mat2_name}")
-        found_both = False
-        
-    if not found_both:
-        return
+    mat1 = mat_data[0]
+    mat2 = mat_data[1]
     mat1_rows = mat1["rows"]
     mat2_rows = mat2["rows"]
     mat1_values = mat1["values"]
@@ -199,15 +198,11 @@ def subtract_matrix(options: list):
     if len(options) < 2:
         print("more options")
         return
-    mats = get_matrices_from_file()
+    mats = get_matrices_list(options[0:])
     if not mats:
-        print("no matrices")
         return
-    mat1 = mats.get(options[0], None)
-    mat2 = mats.get(options[1], None)
-    if not mat1 or not mat2:
-        print("matrices not found")
-        return
+    mat1 = mats[0]
+    mat2 = mats[1]
     if mat1["rows"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
@@ -223,24 +218,20 @@ def scale_matrix(options: list):
             print("use w option to write to file")
         write = True
 
-    matrix_data = get_matrices_from_file()
-    if not matrix_data:
+    matrix_obj = get_matrices_list([options[0]])
+    if not matrix_obj:
         return
     mat_name = options[0]
-    matrix_obj = matrix_data.get(mat_name, None)
-    if not matrix_obj:
-        print(f"couldn't find matrix {mat_name}")
-        return
     try:
         scale = float(options[1])
     except:
         print("couldn't convert option 2 to a float")
         return
-    matrix_obj["values"] = mc.scale(matrix_obj["values"], scale)
+    matrix_obj[0]["values"] = mc.scale(matrix_obj[0]["values"], scale)
     new_matrix_name = mat_name + "s"
     if write:
-        add_to_file(matrix_obj, new_matrix_name)
-    print_matrix(matrix_obj, new_matrix_name)
+        add_to_file(matrix_obj[0], new_matrix_name)
+    print_matrix(matrix_obj[0], new_matrix_name)
 
 def transpose_matrix(options: list):
     if len(options) < 1:
@@ -250,16 +241,13 @@ def transpose_matrix(options: list):
     if len(options) == 2:
         if options[1] == 'w':
             write = True
-    matrix_objs = get_matrices_from_file()
-    if not matrix_objs:
-        return
-    mat_to_transpose = matrix_objs.get(options[0], None)
+    mat_to_transpose = get_matrices_list([options[0]])
     if not mat_to_transpose:
         return
-    new_list = mc.transpose(mat_to_transpose["values"], mat_to_transpose["columns"], mat_to_transpose["rows"])
+    new_list = mc.transpose(mat_to_transpose[0]["values"], mat_to_transpose[0]["columns"], mat_to_transpose[0]["rows"])
     write_mat = {
-    "rows"    : mat_to_transpose["columns"],
-    "columns" : mat_to_transpose["rows"],
+    "rows"    : mat_to_transpose[0]["columns"],
+    "columns" : mat_to_transpose[0]["rows"],
     "values"  : new_list
     }
     trans_mat_name = options[0] + "t"
@@ -271,55 +259,46 @@ def find_determinate(options: list):
     if len(options) < 1:
         print("Provide the name of the matrix to find the determinate of")
         return
-    matrix_objs = get_matrices_from_file()
-    if not matrix_objs:
-        print("Couldn't get matrices")
-        return
-    matrix_to_det = matrix_objs.get(options[0], None)
+    matrix_to_det = get_matrices_list([options[0]])
     if not matrix_to_det:
-        print("couldnt matrix")
         return
-    mat_rows = matrix_to_det["rows"]
-    mat_cols = matrix_to_det["columns"]
+    mat_rows = matrix_to_det[0]["rows"]
+    mat_cols = matrix_to_det[0]["columns"]
     if mat_rows != mat_cols:
         print("Cant find determinate of non perfect square matrices")
         return
-    print(mc.deter(matrix_to_det["values"], mat_rows))
+    print(mc.deter(matrix_to_det[0]["values"], mat_rows))
     
 
 def find_inverse(options: list):
     if len(options) < 1:
         print("Provide the name of the matrix to find the inverse of")
         return
-    matrix_objs = get_matrices_from_file()
-    if not matrix_objs:
-        print("couldn't matrix")
-        return
-    matrix_to_inv = matrix_objs.get(options[0], None)
+    matrix_to_inv = get_matrices_list([options[0]])
     if not matrix_to_inv:
-        print("couldn't matrix")
         return
-    mat_rows = matrix_to_inv["rows"]
-    mat_columns = matrix_to_inv["columns"]
+    mat_rows = matrix_to_inv[0]["rows"]
+    mat_columns = matrix_to_inv[0]["columns"]
     if mat_rows != mat_columns:
         print("Can't find the inverse of non perfect square matrices")
         return
-    mc.inverse(matrix_to_inv["values"], mat_rows)
-    # pm.prettify_matrix(mc.inverse(matrix_to_inv["values"], mat_rows), mat_rows)
+    
+    mc.inverse(matrix_to_inv[0]["values"], mat_rows)
+
 
 def back_failsafe(options: list=None):
     return True
 
 def mat_help(options: list=None):
     print("-" * 55)
-    for command in ex_commands:
-        print(f"\n{command} " + " " * (7 - len(command)) + f"- {ex_commands_help[command]}")
+    for command in mat_commands:
+        print(f"\n{command} " + " " * (7 - len(command)) + f"- {mat_commands_help[command]}")
     print("\n" + "-" * 55)
 
 def my_exit(options: list=None):
     exit()
 
-ex_commands = {
+mat_commands = {
     "x"     : my_exit,
     "exit"  : my_exit,
     "back"  : back_failsafe,
@@ -335,7 +314,7 @@ ex_commands = {
     "solve" : inv_solve
 }
 
-ex_commands_help = {
+mat_commands_help = {
     "x"     : "exits the application",
     "exit"  : "exits the application",
     "back"  : "go back one menu",
@@ -352,7 +331,7 @@ ex_commands_help = {
 }
 # End matrix functions
 
-def execute(options: list):
+def matrix(options: list):
     while True:
         user_input = input("matrixinator> ").lower()
         user_input = user_input.split(" ")
@@ -364,10 +343,10 @@ def execute(options: list):
         
         back = False
         
-        if user_command not in ex_commands:
+        if user_command not in mat_commands:
             print("not a matrix operation")
-            return
-        back = ex_commands[user_command](user_input[1:])
+            continue
+        back = mat_commands[user_command](user_input[1:])
         if back:
             return
 
@@ -388,7 +367,7 @@ def remove(options: list):
     if len(options) != 1:
         print("Provide the name of matrix to remove\nExample, rm matrix1")
         return
-    matrix_data = get_matrices_from_file()
+    matrix_data = get_matrices_dict()
     if not matrix_data:
         return
     if matrix_data.pop(options[0], None):
@@ -402,21 +381,18 @@ def search(options: list):
     if len(options) != 1:
         print("Provide the name of the matrix you are searching for\nExample, search matrix1")
         return
-    matrix_data = get_matrices_from_file()
+    matrix_data = get_matrices_list([options[0]])
     if not matrix_data:
         return
     matrix_name = options[0]
-    if matrix_data.get(matrix_name, None):
-        print_matrix(matrix_data[matrix_name], matrix_name)
-    else:
-        print("matrix not found in file")
+    print_matrix(matrix_data[0], matrix_name)
 
 def update(options: list):
     if len(options) != 3:
         print("provide name row_count and values\nExample, update matrix1 2 1,2")
         return
     matrix_name = options[0]
-    matrix_data = get_matrices_from_file()
+    matrix_data = get_matrices_dict()
     if not matrix_data:
         return
     if not matrix_data.get(matrix_name, None):
@@ -445,7 +421,7 @@ commands = {
     "search" : search,
     "update" : update,
     "ls"     : view_whole_file,
-    "mat"    : execute
+    "mat"    : matrix
 }
 
 commands_help = {
