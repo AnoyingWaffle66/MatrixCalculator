@@ -151,9 +151,13 @@ def inv_solve(options: list):
     if is_singular == 0:
         print("Determinate is 0, matrix has no inverse")
         return
-    solution = mc.solve(mat1["values"], mat2["values"], side)
-    print("\n\nAnswer -> inverse matrix * solution matrix")
-    pm.prettify_matrix(solution, side)
+    write_mat = {
+        "rows"    : side,
+        "columns" : 1,
+        "values"  : mc.solve(mat1["values"], mat2["values"], side)
+    }
+    # print("\n\nAnswer -> inverse matrix * solution matrix")
+    print_matrix(write_mat, f"{options[0]}solve")
 
 def add_matrix(options: list, scale: int=1):
     if len(options) < 2:
@@ -169,12 +173,12 @@ def add_matrix(options: list, scale: int=1):
     mat_data = get_matrices_list(options[0:])
     if not mat_data:
         return
-    mat1_name = options[0]
-    mat2_name = options[1]
-    mat1 = mat_data[0]
-    mat2 = mat_data[1]
-    mat1_rows = mat1["rows"]
-    mat2_rows = mat2["rows"]
+    mat1_name   = options[0]
+    mat2_name   = options[1]
+    mat1        = mat_data[0]
+    mat2        = mat_data[1]
+    mat1_rows   = mat1["rows"]
+    mat2_rows   = mat2["rows"]
     mat1_values = mat1["values"]
     mat2_values = mat2["values"]
     
@@ -186,9 +190,9 @@ def add_matrix(options: list, scale: int=1):
         join_string = "-"
     new_matrix_name = mat1_name + join_string + mat2_name
     new_matrix = {
-        "rows"   : mat1_rows,
+        "rows"    : mat1_rows,
         "columns" : int(len(mat1_values)/mat1_rows),
-        "values" : mc.add(mat1_values, mat2_values)
+        "values"  : mc.add(mat1_values, mat2_values)
     }
     if write:
         add_to_file(new_matrix, new_matrix_name)
@@ -282,8 +286,12 @@ def find_inverse(options: list):
     if mat_rows != mat_columns:
         print("Can't find the inverse of non perfect square matrices")
         return
-    
-    mc.inverse(matrix_to_inv[0]["values"], mat_rows)
+    write_mat = {
+        "rows"    : mat_rows,
+        "columns" : mat_columns,
+        "values"  : mc.inverse(matrix_to_inv[0]["values"], mat_rows)
+    }
+    print_matrix(write_mat, f"{options[0]}inv")
 
 
 def back_failsafe(options: list=None):

@@ -68,20 +68,20 @@ def inverse(mat: list, side: int) -> list:
                 exponent_list.append(a+b)
         cofactor = pow(-1, exponent_list[matrix_pos]) * deter(mat_to_det, side - 1)
         mat_to_return[matrix_pos] = cofactor
-    print("\nCofactor matrix")
-    pm.prettify_matrix(mat_to_return, side)
+    # print("\nCofactor matrix")
+    # pm.prettify_matrix(mat_to_return, side)
     mat_to_return = transpose(mat_to_return, side, side)
-    print("\nTranspose matrix")
-    pm.prettify_matrix(mat_to_return, side)
+    # print("\nTranspose matrix")
+    # pm.prettify_matrix(mat_to_return, side)
     inverse_determinate = 1/determinate
-    print(f"\nDeterminate - {determinate}")
-    print(f"\nInverse matrix -> matrix/{determinate}")
+    # print(f"\nDeterminate - {determinate}")
+    # print(f"\nInverse matrix -> matrix/{determinate}")
     mat_to_return = scale(mat_to_return, inverse_determinate)
-    pm.prettify_matrix(mat_to_return, side)
+    # pm.prettify_matrix(mat_to_return, side)
     return mat_to_return
 
 def solve(mat1: list, mat2: list, dimension: int) -> list:
     inverse_mat = inverse(mat1, dimension)
-    print("\nSolution -> inverse matrix * solution matrix")
-    pm.prettify_matrix(inverse_mat, dimension)
+    # print("\nSolution -> inverse matrix * solution matrix")
+    # pm.prettify_matrix(inverse_mat, dimension)
     return multiply(inverse_mat, mat2, dimension, dimension, 1)
