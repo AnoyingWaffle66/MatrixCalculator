@@ -1,4 +1,4 @@
-import prettify_matrix as pm
+import print_stuff as pm
 
 def MCA(mult: int, const: int, add: int) -> int:
     return mult * const + add
