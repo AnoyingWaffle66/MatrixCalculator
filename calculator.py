@@ -1,6 +1,7 @@
 import json
 import matrix_functions as mc
 import vector_functions as vc
+import numpy as np
 import print_stuff as pm
 
 # "database" file name
@@ -132,19 +133,33 @@ def parse_matrix(properties: list) -> dict:
         "columns" : int(len(float_values)/rows),
         "values"  : float_values
     }
-    
-def parse_vector(properties: list) -> dict:
+
+def value_append(values: list, value: int, string_values: str, attempts: int):
+    idx = value
     try:
-        string_values = properties[0].split(',')
-        values = []
-        for value in string_values:
-            values.append(float(value))
+        for idx in range(value, len(string_values)):
+            if "root" in string_values[idx]:
+                values.append(np.sqrt(float(string_values[idx][4:])))
+            else:
+                values.append(float(string_values[idx]))
     except:
         print("values need to numbers and seperated by commas")
-        return
-    return {
-        "values" : values
-    }
+        attempts += 1
+    return values, attempts
+
+
+def parse_vector(properties: list) -> dict:
+    string_values = properties[0].split(',')
+    values = []
+    attempts = 0
+    while len(values) != len(string_values) and attempts < 1:
+        values, attempts = value_append(values, len(values), string_values, attempts)
+    if attempts == 1:
+        return None
+    else:
+        return {
+            "values" : values
+        }
 
 def multiply_matrix(options: list):
     if len(options) < 2:
@@ -204,7 +219,6 @@ def inv_solve(options: list):
         "columns" : 1,
         "values"  : mc.solve(mat1["values"], mat2["values"], side)
     }
-    # print("\n\nAnswer -> inverse matrix * solution matrix")
     pm.print_matrix(write_mat, f"{options[0]}solve")
 
 def add_matrix(options: list, scale: int=1):
@@ -444,13 +458,13 @@ def add_vector(options: list):
     vec1, vec2 = need_two_vec(options[0:])
     if not vec1 or not vec2:
         return
-    pm.prettify_vector(vc.add(vec1, vec2))
+    print(pm.prettify_vector(vc.add(vec1, vec2)) + "\n")
 
 def sub_vector(options: list):
     vec1, vec2 = need_two_vec(options[0:])
     if not vec1 or not vec2:
         return
-    pm.prettify_vector(vc.sub(vec1, vec2))
+    print(pm.prettify_vector(vc.sub(vec1, vec2)) + "\n")
 
 def magnitude(options: list):
     vec1 = need_one_vec(options[0:])
@@ -462,7 +476,7 @@ def dot_product(options: list):
     vec1, vec2 = need_two_vec(options[0:])
     if not vec1 or not vec2:
         return
-    print(vc.dot(vec1, vec2))
+    print(f"{vc.dot(vec1, vec2)}\n")
 
 def scale_vector(options: list):
     vec = need_one_vec([options[0]])
@@ -472,32 +486,38 @@ def scale_vector(options: list):
         scale = float(options[1])
     except:
         print("Provide a numeric value for a scalar")
-    pm.prettify_vector(vc.scale(vec, scale))
+    print(pm.prettify_vector(vc.scale(vec, scale)) + "\n")
 
 def distance(options: list):
-    vec = need_one_vec([options[0]])
-    if not vec:
+    vec1, vec2 = need_two_vec(options[0:])
+    if not vec1 or not vec2:
         return
-    pm.prettify_vector(vc.normalize(vec))
+    print("%.4f" % vc.distance(vec1, vec2))
 
 def normalize(options: list):
     vec = need_one_vec([options[0]])
     if not vec:
         return
-    pm.prettify_vector(vc.normalize(vec))
+    print(pm.prettify_vector(vc.normalize(vec)) + "\n")
 
 def point_in_same_direction(options: list):
     vec1, vec2 = need_two_vec(options[0:])
     if not vec1 or not vec2:
         return
-    pm.prettify_vector(vc.point(vec1, vec2))
+    print(pm.prettify_vector(vc.point(vec1, vec2)) + "\n")
+    
+def project(options: list):
+    vec1, vec2 = need_two_vec(options[0:])
+    if not vec1 or not vec2:
+        return
+    vc.proj(vec1, vec2)
 
 def vec_help(options: list=None):
     print("-" * 55)
     for command in vec_commands:
         print(f"\n{command} " + " " * (7 - len(command)) + f"- {vec_commands_help[command]}")
     print("\n" + "-" * 55)
-    
+
 vec_commands = {
     "x"     : my_exit,
     "exit"  : my_exit,
@@ -511,7 +531,8 @@ vec_commands = {
     "scale" : scale_vector,
     "dis"   : distance,
     "norm"  : normalize,
-    "point" : point_in_same_direction
+    "point" : point_in_same_direction,
+    "proj"  : project
 }
 
 vec_commands_help = {
@@ -527,8 +548,8 @@ vec_commands_help = {
     "scale" : "scale a vector by a coefficient",
     "dis"   : "find the distance between two vectors",
     "norm"  : "normalize a vector",
-    "point" : "point two vectors in the same direction"
-
+    "point" : "point two vectors in the same direction",
+    "proj"  : "project first vector onto second vector"
 }
 
 # End vector functions
@@ -587,6 +608,9 @@ def add(options: list):
                 print("Provide the name and values for the vector")
                 return
             file = vector_file
+        case _:
+            print("Provide v for vector or m for matrix")
+            return
     parsed_thing = which_parse[options[0]](options[2:])
     if not parsed_thing:
         return
@@ -643,28 +667,6 @@ def search(options: list):
         return
     which_print[options[0]](data[matrix_name], matrix_name)
 
-# def update(options: list):
-#     if len(options) < 1:
-#         print("Incorrect amount or arguments")
-#         return
-#     if len(options) != 3:
-#         print("provide name row_count and values\nExample, update matrix1 2 1,2")
-#         return
-#     matrix_name = options[0]
-#     matrix_data = get_matrices_dict()
-#     if not matrix_data:
-#         return
-#     if not matrix_data.get(matrix_name, None):
-#         print("no matrix with that name")
-#         return
-#     matrix_parsed = parse_matrix(options[1:])
-#     if not matrix_parsed:
-#         return
-#     matrix_data[matrix_name] = matrix_parsed
-#     overwrite_file(matrix_data)
-#     print(f"\nMatrix {matrix_name} was updated")
-#     pm.print_matrix(matrix_parsed, matrix_name)
-
 def help(options: list):
     print("-" * 55)
     for command in commands:
@@ -678,7 +680,6 @@ commands = {
     "add"    : add,
     "rm"     : remove,
     "search" : search,
-    # "update" : update,
     "ls"     : view_whole_file,
     "mat"    : matrix,
     "vec"    : vector
@@ -691,7 +692,6 @@ commands_help = {
     "add"    : "add a matrix to the file",
     "rm"     : "remove a matrix from the file",
     "search" : "search for a matrix name in the file",
-    # "update" : "update an existing matrix",
     "ls"     : "view all matrices in the file",
     "mat"    : "access the matrix calculator",
     "vec"    : "access the vector calculator"

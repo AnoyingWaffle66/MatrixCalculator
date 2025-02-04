@@ -22,16 +22,20 @@ def print_matrix(matrix: dict, matrix_name: str):
             print("values")
             prettify_matrix(matrix[matrix_sub], matrix["rows"])
     print("")
-    
+
 def print_vector(vector: dict, vector_name: str):
     print("")
     print(f"name  - {vector_name}\n")
-    prettify_vector(vector["values"])
+    print(prettify_vector(vector["values"]) + "\n")
 
-def prettify_vector(vector: list):
-    vec_string = "<"
+def prettify_vector(vector: list) -> str:
+    vec_string = "< "
     for number in vector:
         number_str = "%.2f" % number
-        vec_string += f"{' ' * (7 - len(number_str))} {number_str}"
-    vec_string += "   >"
-    print(vec_string + "\n")
+        maximum = 6
+        if number_str[0] == "-":
+            maximum = 7
+        number_str_len = maximum - len(number_str)
+        vec_string += f"{' ' * number_str_len}{number_str}{' ' * number_str_len}"
+    vec_string += " >"
+    return vec_string
