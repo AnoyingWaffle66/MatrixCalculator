@@ -1,5 +1,6 @@
 import print_stuff as ps
 import numpy as np
+from matrix_functions import deter
 
 def add(vec1: list, vec2: list) -> list:
     new_vec = []
@@ -76,3 +77,37 @@ def proj(vec1: list, vec2: list) -> list:
     perpindicular_vec_str = ps.prettify_vector(sub(vec1, projection))
     print("v2 = v - v1\n%s - %s\n= %s\n" % (vec1_str, projection_str, perpindicular_vec_str))
     return projection
+
+def cross(vecs: list) -> list:
+    vecs_to_mat = []
+    cross_vec = []
+    length = len(vecs[0])
+    for ones in range(length):
+        vecs_to_mat.append(1.0)
+        cross_vec.append(0)
+    for vec in vecs:
+        for vec_value in vec:
+            vecs_to_mat.append(vec_value)
+    print("\nIdentity vectors into top row of matrix")
+    print(f"{ps.prettify_matrix(vecs_to_mat, length)}")
+    ps.prettify_matrix(vecs_to_mat, length)
+    print("\n\nDeterminates of identity row")
+    for a in range(length):
+        temp_mat = []
+        exponents_list = []
+        for b in range(length):
+            for c in range(length):
+                idx = b * length + c
+                div = int(idx / length)
+                mod = idx % length
+                if mod != a % length and div != int(a / length):
+                    temp_mat.append(vecs_to_mat[idx])
+                exponents_list.append(b+c)
+        cross_vec[a] = pow(-1, exponents_list[a]) * deter(temp_mat, length - 1)
+        # mat_str = ps.prettify_matrix(temp_mat, length - 1)
+        print(f"minor {a + 1}:\n{ps.prettify_matrix(temp_mat, length - 1)}\n")
+        print(f"(-1)^{exponents_list[a]} * 1 * {cross_vec[a]}")
+        print(f"= {cross_vec[a]}\n")
+    print(f"\nCross product vector = {ps.prettify_vector(cross_vec)}\n")
+    print("Angle between = asin(|a X b|/(||a|| * ||b||))\n= %.4f\n" % np.rad2deg(np.asin(mag(cross_vec)/(mag(vecs[0]) * mag(vecs[1])))))
+    print("Area of parallelogram = magnitude of normal vector\n= %.4f\n" % mag(cross_vec))

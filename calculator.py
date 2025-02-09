@@ -272,7 +272,7 @@ def subtract_matrix(options: list):
     if mat1["rows"] != mat2["rows"]:
         print("matrices have incompatible dimensions")
         return
-    pm.prettify_matrix(mc.subtract(mat1["values"], mat2["values"]), mat1["rows"])
+    print(pm.prettify_matrix(mc.subtract(mat1["values"], mat2["values"]), mat1["rows"]))
 
 def scale_matrix(options: list):
     if len(options) < 2:
@@ -354,10 +354,29 @@ def find_inverse(options: list):
         "values"  : mc.inverse(matrix_to_inv[0]["values"], mat_rows)
     }
     pm.print_matrix(write_mat, f"{options[0]}inv")
-
+    
+def clear_mats(options: list=None):
+    global matrix_file
+    global empty_file_matrix
+    overwrite_file(matrix_file, empty_file_matrix)
+    print("All matrices have been cleared")
 
 def back_failsafe(options: list=None):
     return True
+
+def add_mat_to_file(options: list):
+    if len(options) < 3:
+        print("provide name rows and values of matrix")
+        return
+    global files
+    add([files["matrix_nojson"], options[0], options[1], options[2]])
+
+def remove_mat_from_file(options: list):
+    if len(options) < 1:
+        print("provide the name of the matrix to remove")
+        return
+    global files
+    remove([files["matrix_nojson"], options[0]])
 
 def mat_help(options: list=None):
     print("-" * 55)
@@ -370,11 +389,13 @@ def my_exit(options: list=None):
 
 mat_commands = {
     "x"     : my_exit,
-    "exit"  : my_exit,
     "back"  : back_failsafe,
     "help"  : mat_help,
     "ls"    : view_all_matrix,
-    "add"   : add_matrix,
+    "clear" : clear_mats,
+    "add"   : add_mat_to_file,
+    "rm"    : remove_mat_from_file,
+    "plus"  : add_matrix,
     "sub"   : subtract_matrix,
     "mult"  : multiply_matrix,
     "scale" : scale_matrix,
@@ -386,11 +407,13 @@ mat_commands = {
 
 mat_commands_help = {
     "x"     : "exits the application",
-    "exit"  : "exits the application",
     "back"  : "go back one menu",
     "help"  : "displays this list of command descriptions",
     "ls"    : "view all matrices in the file",
-    "add"   : "add two matrices together",
+    "clear" : "clear all matrices in the file",
+    "add"   : "add matrix to file",
+    "rm"    : "remove matrix from file",
+    "plus"  : "add two matrices together",
     "sub"   : "subtract two matrices from each other",
     "mult"  : "multiply two matrices together",
     "scale" : "scale matrix by coefficient",
@@ -467,6 +490,8 @@ def sub_vector(options: list):
     print(pm.prettify_vector(vc.sub(vec1, vec2)) + "\n")
 
 def magnitude(options: list):
+    if len(options) < 1:
+        return
     vec1 = need_one_vec(options[0:])
     if not vec1:
         return
@@ -479,6 +504,8 @@ def dot_product(options: list):
     print(f"{vc.dot(vec1, vec2)}\n")
 
 def scale_vector(options: list):
+    if len(options) < 1:
+        return
     vec = need_one_vec([options[0]])
     if not vec:
         return
@@ -495,6 +522,8 @@ def distance(options: list):
     print("%.4f" % vc.distance(vec1, vec2))
 
 def normalize(options: list):
+    if len(options) < 1:
+        return
     vec = need_one_vec([options[0]])
     if not vec:
         return
@@ -511,6 +540,51 @@ def project(options: list):
     if not vec1 or not vec2:
         return
     vc.proj(vec1, vec2)
+    
+def cross(options: list):
+    if len(options) < 1:
+        return
+    vec1 = need_one_vec([options[0]])
+    if not vec1:
+        return
+    if len(vec1) -1 != len(options):
+        print("need one less vector than its dimension")
+        return
+    vecs = []
+    for idx in range(len(options)):
+        vecs.append(need_one_vec([options[idx]]))
+    valid_dimensions = 0
+    previous_dimension = 0
+    for vec in vecs:
+        if previous_dimension == 0:
+            previous_dimension = len(vec)
+            continue
+        valid_dimensions = len(vec)
+        if valid_dimensions != previous_dimension:
+            print("incompatible dimensions")
+            return
+        previous_dimension = valid_dimensions
+    vc.cross(vecs)
+
+def add_vec_to_file(options: list):
+    if len(options) < 2:
+        print("provide name and values of vector")
+        return
+    global files
+    add([files["vector_nojson"], options[0], options[1]])
+
+def remove_vec_from_file(options: list):
+    if len(options) < 1:
+        print("provide the name of the vector")
+        return
+    global files
+    remove([files["vector_nojson"], options[0]])
+
+def clear_vecs(options: list=None):
+    global vector_file
+    global empty_file_vector
+    overwrite_file(vector_file, empty_file_vector)
+    print("All vectors have been removed")
 
 def vec_help(options: list=None):
     print("-" * 55)
@@ -520,11 +594,13 @@ def vec_help(options: list=None):
 
 vec_commands = {
     "x"     : my_exit,
-    "exit"  : my_exit,
     "back"  : back_failsafe,
     "help"  : vec_help,
     "ls"    : view_all_vectors,
-    "add"   : add_vector,
+    "clear" : clear_vecs,
+    "add"   : add_vec_to_file,
+    "rm"    : remove_vec_from_file,
+    "plus"  : add_vector,
     "sub"   : sub_vector,
     "mag"   : magnitude,
     "dot"   : dot_product,
@@ -532,16 +608,19 @@ vec_commands = {
     "dis"   : distance,
     "norm"  : normalize,
     "point" : point_in_same_direction,
-    "proj"  : project
+    "proj"  : project,
+    "cross" : cross
 }
 
 vec_commands_help = {
     "x"     : "exits the application",
-    "exit"  : "exits the application",
     "back"  : "goes back one menu",
     "help"  : "displays this list of commands",
     "ls"    : "view all vectors in file",
-    "add"   : "add two vectors together",
+    "clear" : "clear all vectors in the file",
+    "add"   : "add vector to file",
+    "rm"    : "remove vector from file",
+    "plus"  : "add two vectors together",
     "sub"   : "subtract two vectors from each other",
     "mag"   : "gets the magnitude of a vector",
     "dot"   : "finds the dot product of two vectors",
@@ -549,7 +628,8 @@ vec_commands_help = {
     "dis"   : "find the distance between two vectors",
     "norm"  : "normalize a vector",
     "point" : "point two vectors in the same direction",
-    "proj"  : "project first vector onto second vector"
+    "proj"  : "project first vector onto second vector",
+    "cross" : "finds the cross product of n vectors"
 }
 
 # End vector functions
@@ -643,6 +723,20 @@ def remove(options: list):
         return
     overwrite_file(file, data)
 
+which_clear = {
+    "m" : clear_mats,
+    "v" : clear_vecs
+}
+
+def clear_(options: list):
+    if len(options) < 1:
+        print("Provide v for vector file or m for matrix file")
+        return
+    if options[0] not in which_clear:
+        print("Provide v for vector file or m for matrix file")
+        return
+    which_clear[options[0]](options[0:])
+
 def search(options: list):
     if len(options) != 2:
         print("Incorrect amount or arguments")
@@ -675,10 +769,10 @@ def help(options: list):
 
 commands = {
     "x"      : my_exit,
-    "exit"   : my_exit,
     "help"   : help,
     "add"    : add,
     "rm"     : remove,
+    "clear"  : clear_,
     "search" : search,
     "ls"     : view_whole_file,
     "mat"    : matrix,
@@ -687,12 +781,12 @@ commands = {
 
 commands_help = {
     "x"      : "exits the application",
-    "exit"   : "exits the application",
     "help"   : "displays this list of command descriptions",
-    "add"    : "add a matrix to the file",
-    "rm"     : "remove a matrix from the file",
-    "search" : "search for a matrix name in the file",
-    "ls"     : "view all matrices in the file",
+    "add"    : "add a object to the file",
+    "rm"     : "remove a object from the file",
+    "clear"  : "remove all objects in a file",
+    "search" : "search for a object name in a file",
+    "ls"     : "view all objects in a file",
     "mat"    : "access the matrix calculator",
     "vec"    : "access the vector calculator"
 }
@@ -701,7 +795,7 @@ commands_help = {
 
 def start():
     while True:
-        user_input = input("main> ").lower()
+        user_input = input("maininator> ").lower()
         
         user_input = user_input.split(" ")
         user_command = user_input[0]

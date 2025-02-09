@@ -1,16 +1,17 @@
 def prettify_matrix(matrix: list, rows: int):
     columns = int(len(matrix)/rows)
+    string_no_comma = ""
     for row in range(0, rows):
         row_to_print = []
         for column in range(0, columns):
             row_to_print.append(matrix[row*columns+column])
-        string_no_comma = "["
+        string_no_comma += "["
         for number in range(0, len(row_to_print)):
             number_str = "%.2f" % row_to_print[number]
             string_no_comma += f"{' ' * (7 - len(number_str))}  {number_str}"
             if number == len(row_to_print) - 1:
-                string_no_comma += "   ]"
-        print(string_no_comma)
+                string_no_comma += "   ]\n"
+    return string_no_comma
 
 def print_matrix(matrix: dict, matrix_name: str):
     print("")
@@ -20,7 +21,7 @@ def print_matrix(matrix: dict, matrix_name: str):
             print(f"{matrix_sub} " + " " * (7 - len(matrix_sub)) + f"- {matrix[matrix_sub]}")
         else:
             print("values")
-            prettify_matrix(matrix[matrix_sub], matrix["rows"])
+            print(prettify_matrix(matrix[matrix_sub], matrix["rows"]))
     print("")
 
 def print_vector(vector: dict, vector_name: str):
