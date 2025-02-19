@@ -661,26 +661,17 @@ def catify(options: list):
     transform = None
     mats_to_cat = []
     length = 0
-    no_values = 0
-    extra_iter = 0
-    print(options)
     iterations = int(round(len(options)/2))
     if iterations == 0:
         iterations = 1
     for mat_num in range(len(options)):
-        if mat_num - no_values + extra_iter >= len(options):
-            break
-        print(mat_num)
-        transform = options[2 * mat_num - no_values]
+        transform = options[mat_num]
+        if transform not in concats:
+            continue
         thing = [1.0]
         value_needed = value_no_needed[transform]
-        print(transform)
-        print(value_needed)
-        if not value_needed:
-            no_values += 1
-        else:
-            extra_iter += 1
-            thing = parse_nums(options[2 * mat_num + 1 - no_values])
+        if value_needed:
+            thing = parse_nums(options[mat_num + 1])
         if transform not in concats:
             print("uh oh")
             return
@@ -703,13 +694,12 @@ def catify(options: list):
         "values"  : identity
     }
     
-    print(mats_to_cat)
     mats_to_cat.reverse()
     for mat in mats_to_cat:
         catified = mc.multiply(cat_mat["values"], mat["values"], length, length, length)
         cat_mat["values"] = catified
         print(pm.prettify_matrix(catified, length))
-    print(pm.prettify_matrix(cat_mat["values"], length))
+    # print(pm.prettify_matrix(cat_mat["values"], length))
     global matrix_file
     add_to_file(matrix_file, cat_mat, "cat")
     return
