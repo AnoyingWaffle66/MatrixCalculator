@@ -1,18 +1,15 @@
 import json
-import matrix_functions as mc
-import vector_functions as vc
+import functional.matrix_functions as mc
+import functional.vector_functions as vc
+import functional.linear_transformation_matrices as lt
 import numpy as np
 import print_stuff as pm
 
 # "database" file name
-matrix_file = "m.json"
-vector_file = "v.json"
+matrix_file = "jsons/m.json"
+vector_file = "jsons/v.json"
 
 # "database" file name no .json
-files = {
-    "matrix_nojson" : "m",
-    "vector_nojson" : "v"
-}
 
 empty_file_matrix = {
     "default" : {
@@ -88,22 +85,22 @@ def get_vec_list(vectors: list) -> list:
     return return_list
 
 def view_all_vectors(options: list):
-    view_whole_file([files["vector_nojson"]])
+    view_whole_file(["v"])
 
 def view_all_matrix(options: list):
-    view_whole_file([files["matrix_nojson"]])
+    view_whole_file(["m"])
 
 def view_whole_file(options: list):
     if len(options) != 1:
         print("'ls' needs a file name to view from main")
         return
-    file_to_get = options[0] + ".json"
+    file_to_get = "jsons/" + options[0] + ".json"
     match file_to_get:
-        case "m.json":
+        case "jsons/m.json":
             matrix_data = get_matrices_dict(file_to_get)
             for matrix_name in matrix_data:
                 pm.print_matrix(matrix_data[matrix_name], matrix_name)
-        case "v.json":
+        case "jsons/v.json":
             vec_data = get_matrices_dict(file_to_get)
             for vec_name in vec_data:
                 pm.print_vector(vec_data[vec_name], vec_name)
@@ -354,7 +351,7 @@ def find_inverse(options: list):
         "values"  : mc.inverse(matrix_to_inv[0]["values"], mat_rows)
     }
     pm.print_matrix(write_mat, f"{options[0]}inv")
-    
+
 def clear_mats(options: list=None):
     global matrix_file
     global empty_file_matrix
@@ -368,15 +365,13 @@ def add_mat_to_file(options: list):
     if len(options) < 3:
         print("provide name rows and values of matrix")
         return
-    global files
-    add([files["matrix_nojson"], options[0], options[1], options[2]])
+    add(["m", options[0], options[1], options[2]])
 
 def remove_mat_from_file(options: list):
     if len(options) < 1:
         print("provide the name of the matrix to remove")
         return
-    global files
-    remove([files["matrix_nojson"], options[0]])
+    remove(["m", options[0]])
 
 def mat_help(options: list=None):
     print("-" * 55)
@@ -402,7 +397,7 @@ mat_commands = {
     "trans" : transpose_matrix,
     "deter" : find_determinate,
     "inv"   : find_inverse,
-    "solve" : inv_solve
+    "solve" : inv_solve,
 }
 
 mat_commands_help = {
@@ -420,7 +415,7 @@ mat_commands_help = {
     "trans" : "transpose matrix",
     "deter" : "find determinate of matrix",
     "inv"   : "find inverse of matrix",
-    "solve" : "solve a system equations using inverse matrix"
+    "solve" : "solve a system equations using inverse matrix",
 }
 # End matrix functions
 
@@ -570,15 +565,13 @@ def add_vec_to_file(options: list):
     if len(options) < 2:
         print("provide name and values of vector")
         return
-    global files
-    add([files["vector_nojson"], options[0], options[1]])
+    add(["v", options[0], options[1]])
 
 def remove_vec_from_file(options: list):
     if len(options) < 1:
         print("provide the name of the vector")
         return
-    global files
-    remove([files["vector_nojson"], options[0]])
+    remove(["v", options[0]])
 
 def clear_vecs(options: list=None):
     global vector_file
@@ -631,8 +624,175 @@ vec_commands_help = {
     "proj"  : "project first vector onto second vector",
     "cross" : "finds the cross product of n vectors"
 }
-
 # End vector functions
+
+def parse_nums(nums: str) -> list:
+    unparsed = nums.split(",")
+    parsed = []
+    for num in unparsed:
+        parsed.append(float(num))
+    return parsed
+
+value_no_needed = {
+    "rot"         : True,
+    "rotx"        : True,
+    "roty"        : True,
+    "rotz"        : True,
+    "rotall"      : True,
+    "scale"       : True,
+    "scale3"      : True,
+    "squishx"     : False,
+    "squishy"     : False,
+    "squishoutz"  : False,
+    "squishouty"  : False,
+    "squishoutx"  : False,
+    "aboutx"      : False,
+    "abouty"      : False,
+    "about2"      : True,
+    "about3"      : True,
+    "skewh"       : True,
+    "skewv"       : True,
+    "skewx"       : True,
+    "skewy"       : True,
+    "skewz"       : True
+}
+
+def catify(options: list):
+    transform = None
+    mats_to_cat = []
+    length = 0
+    no_values = 0
+    extra_iter = 0
+    print(options)
+    iterations = int(round(len(options)/2))
+    if iterations == 0:
+        iterations = 1
+    for mat_num in range(len(options)):
+        if mat_num - no_values + extra_iter >= len(options):
+            break
+        print(mat_num)
+        transform = options[2 * mat_num - no_values]
+        thing = [1.0]
+        value_needed = value_no_needed[transform]
+        print(transform)
+        print(value_needed)
+        if not value_needed:
+            no_values += 1
+        else:
+            extra_iter += 1
+            thing = parse_nums(options[2 * mat_num + 1 - no_values])
+        if transform not in concats:
+            print("uh oh")
+            return
+        if len(thing) == 1:
+            thing = thing[0]
+        mat_values, length = concats[transform](thing)
+        mats_to_cat.append({
+                    "rows" : length,
+                    "columns" : length,
+                    "values" : mat_values
+                }) 
+    identity = []
+    if length == 2:
+        identity = [1.0, 0.0, 0.0, 1.0]
+    elif length == 3:
+        identity = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    cat_mat = {
+        "rows"    : length,
+        "columns" : length,
+        "values"  : identity
+    }
+    
+    print(mats_to_cat)
+    mats_to_cat.reverse()
+    for mat in mats_to_cat:
+        catified = mc.multiply(cat_mat["values"], mat["values"], length, length, length)
+        cat_mat["values"] = catified
+        print(pm.prettify_matrix(catified, length))
+    print(pm.prettify_matrix(cat_mat["values"], length))
+    global matrix_file
+    add_to_file(matrix_file, cat_mat, "cat")
+    return
+
+def cat_help(options: list):
+    print('-' * 55)
+    for command in concats_help:
+        print(f"\n{command} " + " " * (9 - len(command)) + f"- {concats_help[command]}")
+    print("\n" + '-' * 55)
+
+concats_executable = {
+    "x"         : my_exit,
+    "back"      : back_failsafe,
+    "help"      : cat_help,
+    "catify"    : catify
+}
+
+concats = {
+    "rot"        : lt.rot2,
+    "rotx"       : lt.rot3x,
+    "roty"       : lt.rot3y,
+    "rotz"       : lt.rot3z,
+    "rotall"     : lt.rot3all,
+    "scale"      : lt.scale2d,
+    "scale3"     : lt.scale3d,
+    "squishx"    : lt.ortho2x,
+    "squishy"    : lt.ortho2y,
+    "squishoutz" : lt.ortho3z,
+    "squishouty" : lt.ortho3y,
+    "squishoutx" : lt.ortho3x,
+    "aboutx"     : lt.aboutx,
+    "abouty"     : lt.abouty,
+    "about2"     : lt.about2d,
+    "about3"     : lt.about3d,
+    "skewh"      : lt.horizontal_skew,
+    "skewv"      : lt.vertical_skew,
+    "skewx"      : lt.x_skew,
+    "skewy"      : lt.y_skew,
+    "skewz"      : lt.z_skew,
+}
+
+concats_help = {
+    "x"          : "exits the application",    
+    "back"       : "goes back one menu",
+    "help"       : "displays this list of commands",
+    "catify"     : "concatenate multiple matrices through multiplication",
+    "rot"        : "rotate in 2d, theta",
+    "rotx"       : "rotate around x in 3d, theta",
+    "roty"       : "rotate around y in 3d, theta",
+    "rotz"       : "rotate around z in 3d, theta",
+    "rotall"     : "rotate around all axes in 3d, theta,x,y,z",
+    "scale"      : "scale in 2d, x,y",
+    "scale3"     : "scale in 3d, x,y,z",
+    "squishx"    : "flatten to x axis",
+    "squishy"    : "flatten to y axis",
+    "squishoutz" : "flatten to x-y plane",
+    "squishouty" : "flatten to x-z plane",
+    "squishoutx" : "flatten to y-z plane",
+    "aboutx"     : "flip across y",
+    "abouty"     : "flip across x",
+    "about2"     : "flip in 2 dimensions, x,y",
+    "about3"     : "flip in 3 dimensions, x,y,z",
+    "skewh"      : "skew horizontally, value",
+    "skewv"      : "skew vertically, value",
+    "skewx"      : "skew the x axis, y,z",
+    "skewy"      : "skew the y axis, x,z",
+    "skewz"      : "skew the z axis, x,y",
+}
+
+def mat_concat(options: list):
+    while True:
+        user_input = input("concatinator> ").lower()
+        
+        user_input = user_input.split(" ")
+        user_command = user_input[0]
+        
+        if user_command not in concats_executable:
+            print("bad boy")
+            continue
+        
+        back = concats_executable[user_command](user_input[1:])
+        if back: 
+            return
 
 def vector(options: list):
     global vector_file
@@ -776,7 +936,8 @@ commands = {
     "search" : search,
     "ls"     : view_whole_file,
     "mat"    : matrix,
-    "vec"    : vector
+    "vec"    : vector,
+    "cat"    : mat_concat
 }
 
 commands_help = {
@@ -788,7 +949,8 @@ commands_help = {
     "search" : "search for a object name in a file",
     "ls"     : "view all objects in a file",
     "mat"    : "access the matrix calculator",
-    "vec"    : "access the vector calculator"
+    "vec"    : "access the vector calculator",
+    "cat"    : "concatenate multiple matrix transformations"
 }
 # End database functions
 
@@ -807,6 +969,6 @@ def start():
         if user_command not in commands:
             print("Not a command use 'help' to see a list of all commands")
             continue
-        commands[user_input[0]](user_input[1:])
+        commands[user_command](user_input[1:])
 
 start()

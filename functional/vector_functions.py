@@ -1,6 +1,6 @@
 import print_stuff as ps
 import numpy as np
-from matrix_functions import deter
+from functional.matrix_functions import deter
 
 def add(vec1: list, vec2: list) -> list:
     new_vec = []
