@@ -657,13 +657,39 @@ value_no_needed = {
     "skewz"       : True
 }
 
+transform_strings = {
+    "rot"         : "2d rotation",
+    "rotx"        : "x rotation in 3d",
+    "roty"        : "y rotation in 3d",
+    "rotz"        : "z rotation in 3d",
+    "rotall"      : "all axis rotation in 3d",
+    "scale"       : "2d scale",
+    "scale3"      : "3d scale",
+    "squishx"     : "orthoganally compress to x axis",
+    "squishy"     : "orthoganally compress to y axis",
+    "squishoutz"  : "orthoganally compress to x-y plain",
+    "squishouty"  : "orthoganally compress to x-z plain",
+    "squishoutx"  : "orthoganally compress to y-z plain",
+    "aboutx"      : "flip about x, across y",
+    "abouty"      : "filp about y, across x",
+    "about2"      : "flip about x and y",
+    "about3"      : "flip about x, y and z",
+    "skewh"       : "horizontal skew",
+    "skewv"       : "vertical skew",
+    "skewx"       : "x axis skew 3d",
+    "skewy"       : "y axis skew 3d",
+    "skewz"       : "z axis skew 3d"
+}
+
 def catify(options: list):
     mats_to_cat = []
-    length = 0
+    transforms = []
+    length = 2
     for mat_num in range(len(options)):
         transform = options[mat_num]
         if transform not in concats:
             continue
+        transforms.append(transform)
         thing = [1.0]
         value_needed = value_no_needed[transform]
         if value_needed:
@@ -672,9 +698,9 @@ def catify(options: list):
             thing = thing[0]
         mat_values, length = concats[transform](thing)
         mats_to_cat.append({
-                    "rows" : length,
+                    "rows"    : length,
                     "columns" : length,
-                    "values" : mat_values
+                    "values"  : mat_values
                 }) 
     identity = []
     if length == 2:
@@ -686,10 +712,12 @@ def catify(options: list):
         "columns" : length,
         "values"  : identity
     }
-    
-    for mat in reversed(mats_to_cat):
-        catified = mc.multiply(cat_mat["values"], mat["values"], length, length, length)
+    mats_to_cat.reverse()
+    transforms.reverse()
+    for mat in range(len(mats_to_cat)):
+        catified = mc.multiply(cat_mat["values"], mats_to_cat[mat]["values"], length, length, length)
         cat_mat["values"] = catified
+        print(f"\n{transform_strings[transforms[mat]]}")
         print(pm.prettify_matrix(catified, length))
     global matrix_file
     add_to_file(matrix_file, cat_mat, "cat")
@@ -930,7 +958,7 @@ commands_help = {
     "ls"     : "view all objects in a file",
     "mat"    : "access the matrix calculator",
     "vec"    : "access the vector calculator",
-    "cat"    : "concatenate multiple matrix transformations"
+    "cat"    : "concatenate linear transformations"
 }
 # End database functions
 
